@@ -1,38 +1,56 @@
-// src/theme.js — màu HUD esports + helper + hằng số dùng chung
+// src/theme.js — Neon / Cyberpunk theme. Giữ nguyên TÊN token để mọi màn tự đổi.
 
 export const C = {
-  bg: "#0b1220",
-  bgAlt: "#0f172a",
-  card: "#111c33",
-  cardAlt: "#16223d",
-  border: "#1e2d4d",
-  text: "#e6edf7",
-  textDim: "#94a3b8",
-  textFaint: "#64748b",
-  amber: "#f5b945",
-  amberDim: "#7a5a1e",
-  cyan: "#34d6e8",
-  cyanDim: "#1d6a74",
-  red: "#ef4444",
-  green: "#22c55e",
-  ad: "#f97316", // sát thương vật lý
-  ap: "#a855f7", // sát thương phép
-  warn: "#fbbf24",
+  // Nền gần đen, hơi ám xanh tím → chiều sâu "tương lai"
+  bg: "#05060a",
+  bgAlt: "#0a0d18",
+  card: "#0e1322",
+  cardAlt: "#141b30",
+  border: "#1e2b4a", // viền ám xanh neon nhạt
+
+  text: "#eaf2ff",
+  textDim: "#8b9bc4",
+  textFaint: "#566087",
+
+  // Accent neon
+  amber: "#ffcb52", // vàng neon (CTA chính)
+  amberDim: "#5e4a1c",
+  cyan: "#27e3ff", // cyan neon (accent chủ đạo)
+  cyanDim: "#0c3a47",
+  violet: "#a679ff", // tím neon (accent phụ / AP)
+  violetDim: "#2a2150",
+
+  red: "#ff4d6d",
+  green: "#3df5a0",
+  ad: "#ff8a3d", // sát thương vật lý (cam neon)
+  ap: "#a679ff", // sát thương phép (tím neon)
+  warn: "#ffc857",
 };
 
-export const LANES = [
-  "Đường trên",
-  "Rừng",
-  "Đường giữa",
-  "Đường dưới",
-  "Hỗ trợ",
-];
+// Gradient dùng với expo-linear-gradient (mảng màu)
+export const GRAD = {
+  header: ["#0b1024", "#0a0f1e", "#100a26"], // navy → tím nhẹ
+  cta: ["#27e3ff", "#7a8bff", "#a679ff"], // cyan → tím (nút chính tương lai)
+  screen: ["#05060a", "#070912"],
+  card: ["#101626", "#0c1120"],
+};
+
+// Glow mềm cho hiệu ứng neon (đổ bóng cùng màu). Dùng spread vào style.
+export const glow = (color = C.cyan, radius = 12, opacity = 0.55) => ({
+  shadowColor: color,
+  shadowOpacity: opacity,
+  shadowRadius: radius,
+  shadowOffset: { width: 0, height: 0 },
+  elevation: Math.round(radius / 2),
+});
+
+export const LANES = ["Đường trên", "Rừng", "Đường giữa", "Đường dưới", "Hỗ trợ"];
 
 // Bỏ dấu tiếng Việt để match autocomplete không phân biệt dấu
 export function noDiacritics(str) {
   return (str || "")
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/đ/g, "d")
     .replace(/Đ/g, "D")
     .toLowerCase()

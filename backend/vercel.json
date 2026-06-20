@@ -2,7 +2,16 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/analyze.js": {
-      "maxDuration": 30
+      "maxDuration": 60
+    },
+    "api/news.js": {
+      "maxDuration": 15
+    },
+    "api/tierlist.js": {
+      "maxDuration": 15
+    },
+    "api/champbuild.js": {
+      "maxDuration": 15
     }
   }
 }

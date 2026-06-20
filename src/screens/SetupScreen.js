@@ -10,10 +10,11 @@ import { C, LANES } from "../theme";
 import { suggestChampions, findChampion } from "../data/champions";
 import { championIcon } from "../lib/images";
 import { extractChampions } from "../lib/api";
+import GradientButton from "../components/GradientButton";
 
 const MAX_EDGE = 1568; // resize cạnh dài → đủ rõ để đọc, nhẹ token
 
-export default function SetupScreen({ session, patch, onExtracted }) {
+export default function SetupScreen({ session, patch, onExtracted, onHistory }) {
   const [champQuery, setChampQuery] = useState(session.champ || "");
   const [suggests, setSuggests] = useState([]);
   const [lane, setLane] = useState(session.lane || LANES[0]);
@@ -96,6 +97,12 @@ export default function SetupScreen({ session, patch, onExtracted }) {
 
   return (
     <ScrollView style={styles.wrap} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+      {onHistory && (
+        <TouchableOpacity style={styles.historyBtn} onPress={onHistory} hitSlop={6}>
+          <Text style={styles.historyText}>📜 Lịch sử phân tích</Text>
+        </TouchableOpacity>
+      )}
+
       <Text style={styles.label}>TƯỚNG CỦA BẠN</Text>
       <View style={styles.champRow}>
         {champObj && (
@@ -143,26 +150,21 @@ export default function SetupScreen({ session, patch, onExtracted }) {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[styles.cta, loading && { opacity: 0.6 }]}
+      <GradientButton
+        title="ĐỌC TEAM ĐỊCH →"
+        loading={loading}
+        loadingText="Đang đọc tướng…"
         onPress={run}
-        disabled={loading}
-      >
-        {loading ? (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <ActivityIndicator color="#0b1220" />
-            <Text style={styles.ctaText}>Đang đọc tướng…</Text>
-          </View>
-        ) : (
-          <Text style={styles.ctaText}>ĐỌC TEAM ĐỊCH →</Text>
-        )}
-      </TouchableOpacity>
+        style={{ marginTop: 22 }}
+      />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: C.bg },
+  historyBtn: { alignSelf: "flex-end", marginBottom: 10, paddingVertical: 4 },
+  historyText: { color: C.cyan, fontWeight: "700", fontSize: 13 },
   label: { color: C.textDim, fontSize: 12, fontWeight: "800", letterSpacing: 1, marginBottom: 8 },
   champRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   champAvatar: { width: 40, height: 40, borderRadius: 8, borderWidth: 1, borderColor: C.amberDim },

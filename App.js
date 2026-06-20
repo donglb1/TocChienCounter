@@ -1,68 +1,195 @@
-// App.js — điều hướng 3 màn bằng state (không cần react-navigation cho luồng tuyến tính này)
+// App.js — điều hướng bằng thanh tab dưới (3 mục), mỗi tab có luồng con riêng.
+// Tách buildSession và suggestSession để 2 luồng không lẫn dữ liệu của nhau.
 import React, { useEffect, useState } from "react";
-import { SafeAreaView, StatusBar, StyleSheet, View, Text } from "react-native";
+import { SafeAreaView, StatusBar, StyleSheet, View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { C } from "./src/theme";
-import { resolveDDragonVersion } from "./src/lib/images";
+import { LinearGradient } from "expo-linear-gradient";
+import { C, GRAD, glow } from "./src/theme";
+import { resolveDDragonVersion, resolveChampionRoster } from "./src/lib/images";
+import { useVersionCheck } from "./src/lib/useVersionCheck";
+import { fetchNews } from "./src/lib/api";
+import HomeScreen from "./src/screens/HomeScreen";
 import SetupScreen from "./src/screens/SetupScreen";
 import ConfirmScreen from "./src/screens/ConfirmScreen";
 import ResultScreen from "./src/screens/ResultScreen";
+import PickScreen from "./src/screens/PickScreen";
+import SuggestSetupScreen from "./src/screens/SuggestSetupScreen";
+import ChampScreen from "./src/screens/ChampScreen";
+import QuickCounterScreen from "./src/screens/QuickCounterScreen";
+import HistoryScreen from "./src/screens/HistoryScreen";
+
+const TABS = [
+  { key: "home", icon: "📰", label: "Tin tức" },
+  { key: "champ", icon: "📖", label: "Tướng" },
+  { key: "counter", icon: "🗡️", label: "1v1" },
+  { key: "build", icon: "⚔️", label: "Build" },
+  { key: "suggest", icon: "🎯", label: "Đội hình" },
+];
+
+const EMPTY_BUILD = { champ: "", lane: "", imageUri: null, enemies: [], build: null };
+const EMPTY_SUGGEST = { lane: "", allies: [], enemies: [], build: null, champ: "" };
 
 export default function App() {
-  const [screen, setScreen] = useState("setup"); // setup | confirm | result
-  const [session, setSession] = useState({
-    champ: "",
-    lane: "",
-    imageUri: null,
-    enemies: [], // [{ name, displayName, confidence }]
-    build: null, // kết quả analyze
-  });
+  const [tab, setTab] = useState("home");
 
-  // Lấy version Data Dragon mới nhất 1 lần khi mở app (cho icon tướng)
+  // Luồng BUILD: setup → confirm → (picks | result)
+  const [buildScreen, setBuildScreen] = useState("setup");
+  const [buildSession, setBuildSession] = useState(EMPTY_BUILD);
+  const patchBuild = (n) => setBuildSession((s) => ({ ...s, ...n }));
+
+  // Luồng SUGGEST: input → picks → result
+  const [suggestScreen, setSuggestScreen] = useState("input");
+  const [suggestSession, setSuggestSession] = useState(EMPTY_SUGGEST);
+  const patchSuggest = (n) => setSuggestSession((s) => ({ ...s, ...n }));
+
+  useVersionCheck();
+  const [patch, setPatch] = useState(null);
   useEffect(() => {
-    resolveDDragonVersion();
+    resolveDDragonVersion().then(() => resolveChampionRoster());
+    fetchNews().then((d) => setPatch(d.patch)).catch(() => {});
   }, []);
 
-  const patch = (next) => setSession((s) => ({ ...s, ...next }));
+  const stepLabel = () => {
+    if (tab === "home") return "Tin tức";
+    if (tab === "champ") return "Thư viện tướng";
+    if (tab === "counter") return "Khắc chế 1v1";
+    if (tab === "build") {
+      return buildScreen === "setup" ? "1 · Thiết lập"
+        : buildScreen === "confirm" ? "2 · Xác nhận"
+        : buildScreen === "picks" ? "Gợi ý tướng"
+        : "3 · Build";
+    }
+    return suggestScreen === "input" ? "Nhập đội hình"
+      : suggestScreen === "picks" ? "Gợi ý tướng"
+      : "Build khắc chế";
+  };
 
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.root}>
         <StatusBar barStyle="light-content" backgroundColor={C.bg} />
-        <View style={styles.header}>
-          <Text style={styles.brand}>
-            TỐC CHIẾN <Text style={{ color: C.amber }}>COUNTER</Text>
-          </Text>
-          <Text style={styles.step}>
-            {screen === "setup" ? "1 · Thiết lập" : screen === "confirm" ? "2 · Xác nhận" : "3 · Build"}
-          </Text>
+        <LinearGradient
+          colors={GRAD.header}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <View>
+            <Text style={styles.brand}>
+              TỐC CHIẾN <Text style={styles.brandAccent}>COUNTER</Text>
+            </Text>
+            {patch ? (
+              <View style={styles.patchChip}>
+                <View style={styles.patchDot} />
+                <Text style={styles.patchText}>PATCH {patch}</Text>
+              </View>
+            ) : null}
+          </View>
+          <Text style={styles.step}>{stepLabel()}</Text>
+        </LinearGradient>
+
+        <View style={styles.content}>
+          {tab === "home" && <HomeScreen />}
+          {tab === "champ" && <ChampScreen />}
+          {tab === "counter" && <QuickCounterScreen />}
+
+          {tab === "build" && buildScreen === "setup" && (
+            <SetupScreen
+              session={buildSession}
+              patch={patchBuild}
+              onExtracted={() => setBuildScreen("confirm")}
+              onHistory={() => setBuildScreen("history")}
+            />
+          )}
+          {tab === "build" && buildScreen === "history" && (
+            <HistoryScreen
+              onBack={() => setBuildScreen("setup")}
+              onOpen={(entry) => {
+                setBuildSession({
+                  champ: entry.champ,
+                  lane: entry.lane,
+                  imageUri: null,
+                  enemies: (entry.enemies || []).map((name) => ({ name, displayName: name, confidence: "high" })),
+                  build: entry.build,
+                });
+                setBuildScreen("result");
+              }}
+            />
+          )}
+          {tab === "build" && buildScreen === "confirm" && (
+            <ConfirmScreen
+              session={buildSession}
+              patch={patchBuild}
+              onBack={() => setBuildScreen("setup")}
+              onAnalyzed={() => setBuildScreen("result")}
+              onSuggestPicks={() => setBuildScreen("picks")}
+            />
+          )}
+          {tab === "build" && buildScreen === "picks" && (
+            <PickScreen
+              session={buildSession}
+              patch={patchBuild}
+              onBack={() => setBuildScreen("confirm")}
+              onShowBuild={() => setBuildScreen("result")}
+            />
+          )}
+          {tab === "build" && buildScreen === "result" && (
+            <ResultScreen
+              session={buildSession}
+              onRestart={() => {
+                setBuildSession(EMPTY_BUILD);
+                setBuildScreen("setup");
+              }}
+              onEditEnemies={() => setBuildScreen("confirm")}
+            />
+          )}
+
+          {tab === "suggest" && suggestScreen === "input" && (
+            <SuggestSetupScreen
+              session={suggestSession}
+              patch={patchSuggest}
+              onGo={() => setSuggestScreen("picks")}
+            />
+          )}
+          {tab === "suggest" && suggestScreen === "picks" && (
+            <PickScreen
+              session={suggestSession}
+              patch={patchSuggest}
+              onBack={() => setSuggestScreen("input")}
+              onShowBuild={() => setSuggestScreen("result")}
+            />
+          )}
+          {tab === "suggest" && suggestScreen === "result" && (
+            <ResultScreen
+              session={suggestSession}
+              onRestart={() => {
+                setSuggestSession(EMPTY_SUGGEST);
+                setSuggestScreen("input");
+              }}
+              onEditEnemies={() => setSuggestScreen("input")}
+            />
+          )}
         </View>
 
-        {screen === "setup" && (
-          <SetupScreen
-            session={session}
-            patch={patch}
-            onExtracted={() => setScreen("confirm")}
-          />
-        )}
-        {screen === "confirm" && (
-          <ConfirmScreen
-            session={session}
-            patch={patch}
-            onBack={() => setScreen("setup")}
-            onAnalyzed={() => setScreen("result")}
-          />
-        )}
-        {screen === "result" && (
-          <ResultScreen
-            session={session}
-            onRestart={() => {
-              patch({ enemies: [], build: null, imageUri: null });
-              setScreen("setup");
-            }}
-            onEditEnemies={() => setScreen("confirm")}
-          />
-        )}
+        <View style={styles.tabBar}>
+          {TABS.map((t) => {
+            const active = tab === t.key;
+            return (
+              <TouchableOpacity
+                key={t.key}
+                style={styles.tabItem}
+                onPress={() => setTab(t.key)}
+                activeOpacity={0.7}
+              >
+                {active && <View style={styles.tabAccent} />}
+                <View style={[styles.tabIconWrap, active && styles.tabIconWrapActive]}>
+                  <Text style={[styles.tabIcon, active && styles.tabIconActive]}>{t.icon}</Text>
+                </View>
+                <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{t.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -71,15 +198,34 @@ export default function App() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-    backgroundColor: C.bgAlt,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: "#1a2748",
   },
-  brand: { color: C.text, fontWeight: "800", fontSize: 16, letterSpacing: 1 },
+  brand: { color: C.text, fontWeight: "900", fontSize: 17, letterSpacing: 1.5 },
+  brandAccent: { color: C.cyan, textShadowColor: C.cyan, textShadowRadius: 10, textShadowOffset: { width: 0, height: 0 } },
+  patchChip: {
+    flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5,
+    alignSelf: "flex-start", backgroundColor: "rgba(39,227,255,0.08)",
+    borderWidth: 1, borderColor: C.cyanDim, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 2,
+  },
+  patchDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.cyan, ...glow(C.cyan, 6, 0.9) },
+  patchText: { color: C.cyan, fontWeight: "800", fontSize: 10, letterSpacing: 0.5 },
   step: { color: C.textDim, fontWeight: "700", fontSize: 12 },
+  content: { flex: 1 },
+  tabBar: {
+    flexDirection: "row", borderTopWidth: 1, borderTopColor: "#16223e",
+    backgroundColor: C.bgAlt, paddingTop: 9, paddingBottom: 7,
+  },
+  tabItem: { flex: 1, alignItems: "center", gap: 3 },
+  tabAccent: {
+    position: "absolute", top: -9, width: 30, height: 3, borderRadius: 2,
+    backgroundColor: C.cyan, ...glow(C.cyan, 8, 0.9),
+  },
+  tabIconWrap: { width: 40, height: 30, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  tabIconWrapActive: { backgroundColor: "rgba(39,227,255,0.10)", ...glow(C.cyan, 10, 0.4) },
+  tabIcon: { fontSize: 20, opacity: 0.45 },
+  tabIconActive: { opacity: 1 },
+  tabLabel: { color: C.textFaint, fontSize: 11, fontWeight: "700" },
+  tabLabelActive: { color: C.cyan },
 });

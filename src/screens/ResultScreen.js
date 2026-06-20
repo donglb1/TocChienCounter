@@ -1,8 +1,10 @@
 // src/screens/ResultScreen.js
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from "react-native";
 import { C } from "../theme";
 import { findItem } from "../data/items";
+import { findKeystone, findSpell } from "../data/runes";
+import { itemIcon } from "../lib/images";
 
 // Màu gem theo loại item (fallback khi không có icon CDN)
 const GEM = {
@@ -25,11 +27,16 @@ function ItemGem({ name }) {
   const known = !!item;
   const vi = known ? item.vi : name;
   const color = known ? GEM[item.type] || GEM.core : "#555";
+  const icon = known ? itemIcon(item) : null;
   return (
     <View style={styles.gemWrap}>
-      <View style={[styles.gem, { backgroundColor: color, borderColor: known ? C.amberDim : C.warn }]}>
-        <Text style={styles.gemText}>{abbrev(vi)}</Text>
-      </View>
+      {icon ? (
+        <Image source={{ uri: icon }} style={styles.gemImg} />
+      ) : (
+        <View style={[styles.gem, { backgroundColor: color, borderColor: known ? C.amberDim : C.warn }]}>
+          <Text style={styles.gemText}>{abbrev(vi)}</Text>
+        </View>
+      )}
       <Text style={styles.gemName} numberOfLines={2}>{vi}</Text>
       {!known && <Text style={styles.outBadge}>⚠ NGOÀI DS</Text>}
     </View>
@@ -81,6 +88,46 @@ export default function ResultScreen({ session, onRestart, onEditEnemies }) {
         {profile.summary ? <Text style={styles.summary}>{profile.summary}</Text> : null}
       </View>
 
+      {/* Điểm mạnh/yếu tướng người chơi */}
+      {(b.yourStrengths || b.yourWeaknesses) && (
+        <View style={styles.swCard}>
+          <Text style={styles.cardTitle}>TƯỚNG CỦA BẠN</Text>
+          {b.yourStrengths ? (
+            <View style={styles.swRow}>
+              <Text style={styles.swPlus}>＋</Text>
+              <Text style={styles.swText}>{b.yourStrengths}</Text>
+            </View>
+          ) : null}
+          {b.yourWeaknesses ? (
+            <View style={styles.swRow}>
+              <Text style={styles.swMinus}>－</Text>
+              <Text style={styles.swText}>{b.yourWeaknesses}</Text>
+            </View>
+          ) : null}
+        </View>
+      )}
+
+      {/* Ngọc & Phép bổ trợ */}
+      {(b.keystone?.name || (Array.isArray(b.spells) && b.spells.length > 0)) && (
+        <View style={styles.swCard}>
+          <Text style={styles.cardTitle}>NGỌC & PHÉP BỔ TRỢ</Text>
+          {b.keystone?.name ? (
+            <View style={styles.rsRow}>
+              <Text style={styles.rsBadge}>NGỌC</Text>
+              <Text style={styles.rsName}>{keystoneName(b.keystone.name)}</Text>
+              {b.keystone.reason ? <Text style={styles.rsReason}>· {b.keystone.reason}</Text> : null}
+            </View>
+          ) : null}
+          {(b.spells || []).filter((s) => s && s.name).map((s, i) => (
+            <View key={i} style={styles.rsRow}>
+              <Text style={[styles.rsBadge, styles.rsBadgeSpell]}>PHÉP</Text>
+              <Text style={styles.rsName}>{spellName(s.name)}</Text>
+              {s.reason ? <Text style={styles.rsReason}>· {s.reason}</Text> : null}
+            </View>
+          ))}
+        </View>
+      )}
+
       {/* Build từng bước */}
       <Text style={styles.section}>BUILD KHẮC CHẾ</Text>
       {(b.build || []).map((step, i) => (
@@ -129,6 +176,14 @@ function altName(name) {
   const it = findItem(name);
   return it ? it.vi : name;
 }
+function keystoneName(name) {
+  const k = findKeystone(name);
+  return k ? k.vi : name;
+}
+function spellName(name) {
+  const s = findSpell(name);
+  return s ? s.vi : name;
+}
 function Meta({ label, value, warn }) {
   return (
     <View style={styles.meta}>
@@ -166,6 +221,16 @@ const styles = StyleSheet.create({
   threatChip: { backgroundColor: "#3a1f1f", borderColor: C.red, borderWidth: 1, borderRadius: 12, paddingHorizontal: 9, paddingVertical: 4 },
   threatText: { color: "#fca5a5", fontSize: 12, fontWeight: "600" },
   summary: { color: C.textDim, fontSize: 13, lineHeight: 19, marginTop: 12 },
+  swCard: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 14, marginTop: 12 },
+  swRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginTop: 4 },
+  swPlus: { color: C.green, fontSize: 15, fontWeight: "900", width: 16 },
+  swMinus: { color: C.warn, fontSize: 15, fontWeight: "900", width: 16 },
+  swText: { color: C.text, fontSize: 13, lineHeight: 19, flex: 1 },
+  rsRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 7, marginTop: 7 },
+  rsBadge: { color: C.amber, borderColor: C.amberDim, borderWidth: 1, borderRadius: 5, fontSize: 10, fontWeight: "800", paddingHorizontal: 6, paddingVertical: 2 },
+  rsBadgeSpell: { color: C.cyan, borderColor: C.cyanDim },
+  rsName: { color: C.text, fontSize: 14, fontWeight: "700" },
+  rsReason: { color: C.textDim, fontSize: 12, flexShrink: 1 },
   section: { color: C.amber, fontSize: 13, fontWeight: "800", letterSpacing: 1, marginTop: 22, marginBottom: 12 },
   step: { backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 12, marginBottom: 10 },
   stepHead: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -173,6 +238,7 @@ const styles = StyleSheet.create({
   orderText: { color: C.text, fontWeight: "800", fontSize: 12 },
   gemWrap: { flexDirection: "row", alignItems: "center", gap: 9, flex: 1 },
   gem: { width: 38, height: 38, borderRadius: 9, borderWidth: 1.5, alignItems: "center", justifyContent: "center", transform: [{ rotate: "0deg" }] },
+  gemImg: { width: 38, height: 38, borderRadius: 9, borderWidth: 1.5, borderColor: C.amberDim, backgroundColor: C.cardAlt },
   gemText: { color: "#fff", fontWeight: "900", fontSize: 13 },
   gemName: { color: C.text, fontWeight: "700", fontSize: 14, flexShrink: 1 },
   outBadge: { color: C.warn, fontSize: 10, fontWeight: "800" },
