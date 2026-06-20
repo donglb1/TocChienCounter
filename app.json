@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Tốc Chiến Counter",
+    "slug": "toc-chien-counter",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0b1220"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.donglb.tocchiencounter",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Ứng dụng cần truy cập thư viện ảnh để đọc ảnh chụp màn hình team địch."
+      }
+    },
+    "android": {
+      "package": "com.donglb.tocchiencounter",
+      "permissions": ["READ_EXTERNAL_STORAGE", "READ_MEDIA_IMAGES"]
+    },
+    "plugins": ["expo-image-picker"]
+  }
+}
