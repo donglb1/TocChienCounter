@@ -6,6 +6,7 @@ import {
   ActivityIndicator, RefreshControl, Linking,
 } from "react-native";
 import * as WebBrowser from "expo-web-browser";
+import { Ionicons } from "@expo/vector-icons";
 import { C } from "../theme";
 import { fetchNews } from "../lib/api";
 
@@ -116,7 +117,8 @@ export default function HomeScreen() {
           <Text style={styles.dim}>{error || "Không có tin."}</Text>
           {!!fallbackUrl && (
             <TouchableOpacity style={styles.fallbackBtn} onPress={() => open(fallbackUrl)}>
-              <Text style={styles.fallbackText}>Mở trang tin chính thức ↗</Text>
+              <Text style={styles.fallbackText}>Mở trang tin chính thức</Text>
+              <Ionicons name="open-outline" size={15} color={C.amber} />
             </TouchableOpacity>
           )}
         </View>
@@ -145,6 +147,7 @@ const styles = StyleSheet.create({
   titleFeatured: { color: C.text, fontSize: 18, fontWeight: "800", lineHeight: 25 },
   date: { color: C.textFaint, fontSize: 12, marginTop: 8 },
   fallbackBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
     paddingHorizontal: 18, paddingVertical: 11, borderRadius: 10,
     borderWidth: 1, borderColor: C.amber,
   },

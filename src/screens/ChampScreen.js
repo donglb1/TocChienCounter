@@ -10,6 +10,7 @@ import { CHAMPIONS, BUILD_LABELS, findChampion, findChampionBySlug } from "../da
 import { getChampionBuild } from "../data/buildTemplates";
 import { findItem, findItemBySlug } from "../data/items";
 import { findKeystone, findSpell } from "../data/runes";
+import { Ionicons } from "@expo/vector-icons";
 import { championIcon, itemIcon, ddragonIdByName } from "../lib/images";
 import { getFavorites, toggleFavorite } from "../lib/storage";
 import { fetchTierList, fetchChampBuild } from "../lib/api";
@@ -26,6 +27,15 @@ const RANGE = { xa: "Tầm xa", can: "Cận chiến" };
 const SPIKE = { som: "Mạnh sớm", giua: "Mạnh giữa trận", muon: "Mạnh cuối trận" };
 const ROLE_VI = { Tank: "Đỡ đòn", Fighter: "Đấu sĩ", Mage: "Pháp sư", Assassin: "Sát thủ", Marksman: "Xạ thủ", Support: "Hỗ trợ" };
 const TIER_ORDER = ["S+", "S", "A+", "A", "B", "C", "D"];
+// Lane site (Baron/Jungle/Mid/Dragon/Support) → nhãn ngắn
+const LANE_FILTERS = [
+  { key: "all", label: "Tất cả" },
+  { key: "Baron", label: "Top" },
+  { key: "Jungle", label: "Rừng" },
+  { key: "Mid", label: "Mid" },
+  { key: "Dragon", label: "AD" },
+  { key: "Support", label: "Hỗ trợ" },
+];
 const TIER_COLOR = { "S+": "#ff5d5d", S: C.amber, "A+": "#7ee081", A: C.cyan, B: C.textDim, C: C.textFaint, D: C.textFaint };
 
 // Avatar có fallback chữ khi icon lỗi (tướng mới/WR-riêng không có icon DDragon)
@@ -62,24 +72,28 @@ export default function ChampScreen() {
   const [favs, setFavs] = useState([]);
   const [tierMap, setTierMap] = useState({}); // champ.id → tier
   const [slugMap, setSlugMap] = useState({}); // champ.id → slug site (cho fetch build)
+  const [laneMap, setLaneMap] = useState({}); // champ.id → [lane site]
   const [tierRaw, setTierRaw] = useState([]); // toàn bộ entry tier list (gồm tướng mới)
   const [sortMode, setSortMode] = useState("az"); // az | tier
+  const [laneFilter, setLaneFilter] = useState("all"); // all | Baron | Jungle | Mid | Dragon | Support
 
   useEffect(() => {
     getFavorites().then(setFavs);
     // Tier list (cào qua backend). Lỗi/offline → bỏ qua, thư viện vẫn chạy.
     fetchTierList()
       .then((data) => {
-        const tm = {}, sm = {};
+        const tm = {}, sm = {}, lm = {};
         for (const e of data.list || []) {
           const champ = findChampionBySlug(e.slug) || findChampion(e.name);
           if (champ) {
             tm[champ.id] = e.tier;
             sm[champ.id] = e.slug;
+            lm[champ.id] = e.lanes || [];
           }
         }
         setTierMap(tm);
         setSlugMap(sm);
+        setLaneMap(lm);
         setTierRaw(data.list || []);
       })
       .catch(() => {});
@@ -98,6 +112,7 @@ export default function ChampScreen() {
         damageType: "",
         slug: e.slug,
         tier: e.tier,
+        lanes: e.lanes || [],
         _new: true,
       });
     }
@@ -109,12 +124,14 @@ export default function ChampScreen() {
   // tier của tướng (DB tĩnh tra qua tierMap[id]; tướng mới giữ tier trong chính object)
   const tierOf = (c) => tierMap[c.id] || c.tier;
   const slugOf = (c) => slugMap[c.id] || c.slug || champToSlug(c);
+  const lanesOf = (c) => c.lanes || laneMap[c.id] || [];
 
   const list = useMemo(() => {
     const q = norm(query);
-    const arr = q
+    let arr = q
       ? roster.filter((c) => norm(c.name).includes(q) || norm(c.vi).includes(q))
       : roster;
+    if (laneFilter !== "all") arr = arr.filter((c) => lanesOf(c).includes(laneFilter));
     const favSet = new Set(favs);
     const tierIdx = (c) => {
       const t = tierOf(c);
@@ -129,7 +146,7 @@ export default function ChampScreen() {
       }
       return a.vi.localeCompare(b.vi);
     });
-  }, [query, favs, roster, tierMap, sortMode]);
+  }, [query, favs, roster, tierMap, laneMap, sortMode, laneFilter]);
 
   if (picked) {
     return (
@@ -155,15 +172,31 @@ export default function ChampScreen() {
           style={styles.search}
         />
         {hasTiers && (
-          <View style={styles.sortRow}>
-            <Text style={styles.sortLabel}>Sắp xếp:</Text>
-            <TouchableOpacity onPress={() => setSortMode("az")}>
-              <Text style={[styles.sortOpt, sortMode === "az" && styles.sortOptOn]}>A–Z</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setSortMode("tier")}>
-              <Text style={[styles.sortOpt, sortMode === "tier" && styles.sortOptOn]}>Theo tier</Text>
-            </TouchableOpacity>
-          </View>
+          <>
+            <View style={styles.laneRow}>
+              {LANE_FILTERS.map((l) => {
+                const on = laneFilter === l.key;
+                return (
+                  <TouchableOpacity
+                    key={l.key}
+                    style={[styles.laneChip, on && styles.laneChipOn]}
+                    onPress={() => setLaneFilter(l.key)}
+                  >
+                    <Text style={[styles.laneChipText, on && styles.laneChipTextOn]}>{l.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <View style={styles.sortRow}>
+              <Text style={styles.sortLabel}>Sắp xếp:</Text>
+              <TouchableOpacity onPress={() => setSortMode("az")}>
+                <Text style={[styles.sortOpt, sortMode === "az" && styles.sortOptOn]}>A–Z</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setSortMode("tier")}>
+                <Text style={[styles.sortOpt, sortMode === "tier" && styles.sortOptOn]}>Theo tier</Text>
+              </TouchableOpacity>
+            </View>
+          </>
         )}
       </View>
       <FlatList
@@ -178,13 +211,18 @@ export default function ChampScreen() {
               <ChampAvatar champ={c} style={styles.rowAvatar} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowName}>{c.vi}</Text>
-                <Text style={styles.rowRole}>
-                  {c._new ? "🆕 Tướng mới" : `${ROLE_VI[c.role] || c.role} · ${c.damageType}`}
-                </Text>
+                {c._new ? (
+                  <View style={styles.newRow}>
+                    <Ionicons name="sparkles" size={12} color={C.cyan} />
+                    <Text style={styles.rowRoleNew}>Tướng mới</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.rowRole}>{ROLE_VI[c.role] || c.role} · {c.damageType}</Text>
+                )}
               </View>
               <TierBadge tier={tierOf(c)} />
               <TouchableOpacity onPress={() => onToggleFav(c.id)} hitSlop={10} style={{ padding: 4 }}>
-                <Text style={[styles.star, fav && styles.starOn]}>{fav ? "★" : "☆"}</Text>
+                <Ionicons name={fav ? "star" : "star-outline"} size={20} color={fav ? C.amber : C.textFaint} />
               </TouchableOpacity>
             </TouchableOpacity>
           );
@@ -227,8 +265,9 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
         <TouchableOpacity onPress={onBack} hitSlop={8} style={styles.backBtn}>
           <Text style={styles.backText}>← Danh sách tướng</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onToggleFav} hitSlop={10}>
-          <Text style={[styles.star, isFav && styles.starOn]}>{isFav ? "★ Đã thích" : "☆ Yêu thích"}</Text>
+        <TouchableOpacity onPress={onToggleFav} hitSlop={10} style={styles.favBtn}>
+          <Ionicons name={isFav ? "star" : "star-outline"} size={16} color={isFav ? C.amber : C.textFaint} />
+          <Text style={[styles.star, isFav && styles.starOn]}>{isFav ? "Đã thích" : "Yêu thích"}</Text>
         </TouchableOpacity>
       </View>
 
@@ -240,7 +279,10 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
             <TierBadge tier={tier} big />
           </View>
           {champ._new ? (
-            <Text style={styles.identity}>🆕 Tướng mới — build cập nhật theo web, đặc tính sẽ bổ sung sau.</Text>
+            <View style={styles.newDetailRow}>
+              <Ionicons name="sparkles" size={14} color={C.cyan} />
+              <Text style={[styles.identity, { flex: 1 }]}>Tướng mới — build cập nhật theo web, đặc tính sẽ bổ sung sau.</Text>
+            </View>
           ) : (
             <>
               <View style={styles.tagRow}>
@@ -351,6 +393,11 @@ const styles = StyleSheet.create({
     backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 11, color: C.text, fontSize: 16,
   },
+  laneRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 10 },
+  laneChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: C.border, backgroundColor: C.card },
+  laneChipOn: { borderColor: C.cyan, backgroundColor: C.cyanDim },
+  laneChipText: { color: C.textDim, fontSize: 13, fontWeight: "700" },
+  laneChipTextOn: { color: C.cyan },
   sortRow: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 10 },
   sortLabel: { color: C.textFaint, fontSize: 12 },
   sortOpt: { color: C.textDim, fontSize: 13, fontWeight: "700" },
@@ -369,8 +416,12 @@ const styles = StyleSheet.create({
   avatarFallbackText: { color: C.textDim, fontWeight: "800", fontSize: 14 },
   rowName: { color: C.text, fontWeight: "700", fontSize: 16 },
   rowRole: { color: C.textFaint, fontSize: 12, marginTop: 2 },
+  newRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
+  rowRoleNew: { color: C.cyan, fontSize: 12, fontWeight: "700" },
+  newDetailRow: { flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 6 },
   chevron: { color: C.textFaint, fontSize: 24, fontWeight: "300" },
-  star: { color: C.textFaint, fontSize: 18, fontWeight: "700" },
+  favBtn: { flexDirection: "row", alignItems: "center", gap: 5 },
+  star: { color: C.textFaint, fontSize: 13, fontWeight: "700" },
   starOn: { color: C.amber },
   empty: { color: C.textDim, textAlign: "center", marginTop: 30 },
   detailTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },

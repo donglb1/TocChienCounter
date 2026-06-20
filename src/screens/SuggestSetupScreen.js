@@ -113,7 +113,7 @@ export default function SuggestSetupScreen({ session, patch, onGo }) {
         onRemove={(idx) => setEnemies((e) => e.filter((_, i) => i !== idx))}
       />
 
-      <GradientButton title="🎯 GỢI Ý TƯỚNG NÊN CHỌN →" onPress={run} style={{ marginTop: 26 }} />
+      <GradientButton title="GỢI Ý TƯỚNG NÊN CHỌN" icon="locate" onPress={run} style={{ marginTop: 26 }} />
     </ScrollView>
   );
 }

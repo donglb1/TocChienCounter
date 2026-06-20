@@ -9,6 +9,7 @@ import { suggestChampions, findChampion } from "../data/champions";
 import { championIcon } from "../lib/images";
 import { analyzeBuild } from "../lib/api";
 import { addHistory } from "../lib/storage";
+import { Ionicons } from "@expo/vector-icons";
 import GradientButton from "../components/GradientButton";
 
 export default function ConfirmScreen({ session, patch, onBack, onAnalyzed, onSuggestPicks }) {
@@ -90,9 +91,9 @@ export default function ConfirmScreen({ session, patch, onBack, onAnalyzed, onSu
               {/* Tướng đã nhận diện → hiện tên chuẩn từ DB (khớp icon).
                   Chưa nhận diện → giữ chuỗi AI đọc + cảnh báo ⚠ */}
               <Text style={styles.chipText}>{known ? champ.vi : (e.displayName || e.name)}</Text>
-              {(!known || low) && <Text style={styles.warnTag}>⚠</Text>}
+              {(!known || low) && <Ionicons name="warning" size={13} color={C.warn} />}
               <TouchableOpacity onPress={() => remove(idx)} hitSlop={8}>
-                <Text style={styles.remove}>✕</Text>
+                <Ionicons name="close" size={15} color={C.textFaint} />
               </TouchableOpacity>
             </View>
           );
@@ -145,7 +146,8 @@ export default function ConfirmScreen({ session, patch, onBack, onAnalyzed, onSu
       )}
 
       <TouchableOpacity style={styles.suggestCta} onPress={goSuggest} disabled={loading} activeOpacity={0.85}>
-        <Text style={styles.suggestCtaText}>💡 Gợi ý tướng nên chọn</Text>
+        <Ionicons name="bulb-outline" size={16} color={C.text} />
+        <Text style={styles.suggestCtaText}>Gợi ý tướng nên chọn</Text>
       </TouchableOpacity>
 
       <View style={styles.row}>
@@ -196,7 +198,8 @@ const styles = StyleSheet.create({
   suggestText: { color: C.text, fontSize: 15, fontWeight: "600", flex: 1 },
   suggestRole: { color: C.textFaint, fontSize: 12 },
   suggestCta: {
-    marginTop: 24, borderRadius: 12, paddingVertical: 14, alignItems: "center",
+    flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7,
+    marginTop: 24, borderRadius: 12, paddingVertical: 14,
     borderWidth: 1.5, borderColor: C.cyan, backgroundColor: C.cyanDim,
   },
   suggestCtaText: { color: C.text, fontWeight: "800", fontSize: 14, letterSpacing: 0.5 },

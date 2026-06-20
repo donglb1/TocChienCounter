@@ -2,9 +2,10 @@
 import React from "react";
 import { Text, StyleSheet, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { C, GRAD, glow } from "../theme";
 
-export default function GradientButton({ title, onPress, disabled, loading, loadingText, style }) {
+export default function GradientButton({ title, onPress, disabled, loading, loadingText, icon, style }) {
   const off = disabled || loading;
   return (
     <TouchableOpacity onPress={onPress} disabled={off} activeOpacity={0.85} style={[styles.wrap, style]}>
@@ -20,7 +21,10 @@ export default function GradientButton({ title, onPress, disabled, loading, load
             <Text style={styles.text}>{loadingText || "Đang xử lý…"}</Text>
           </View>
         ) : (
-          <Text style={styles.text}>{title}</Text>
+          <View style={styles.row}>
+            {icon ? <Ionicons name={icon} size={18} color="#04101a" /> : null}
+            <Text style={styles.text}>{title}</Text>
+          </View>
         )}
       </LinearGradient>
     </TouchableOpacity>

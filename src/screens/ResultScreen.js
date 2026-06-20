@@ -38,7 +38,12 @@ function ItemGem({ name }) {
         </View>
       )}
       <Text style={styles.gemName} numberOfLines={2}>{vi}</Text>
-      {!known && <Text style={styles.outBadge}>⚠ NGOÀI DS</Text>}
+      {!known && (
+        <View style={styles.outBadgeRow}>
+          <Ionicons name="warning" size={10} color={C.warn} />
+          <Text style={styles.outBadge}>NGOÀI DS</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -69,7 +74,7 @@ export default function ResultScreen({ session, onRestart, onEditEnemies }) {
 
         <View style={styles.metaRow}>
           <Meta label="Khống chế" value={ccText(profile.ccLevel)} />
-          <Meta label="Hồi máu" value={profile.hasHealing ? "Có ⚠" : "Không"} warn={profile.hasHealing} />
+          <Meta label="Hồi máu" value={profile.hasHealing ? "Có" : "Không"} warn={profile.hasHealing} />
         </View>
 
         {Array.isArray(profile.mainThreats) && profile.mainThreats.length > 0 && (

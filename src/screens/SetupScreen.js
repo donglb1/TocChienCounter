@@ -10,6 +10,7 @@ import { C, LANES } from "../theme";
 import { suggestChampions, findChampion } from "../data/champions";
 import { championIcon } from "../lib/images";
 import { extractChampions } from "../lib/api";
+import { Ionicons } from "@expo/vector-icons";
 import GradientButton from "../components/GradientButton";
 
 const MAX_EDGE = 1568; // resize cạnh dài → đủ rõ để đọc, nhẹ token
@@ -99,7 +100,8 @@ export default function SetupScreen({ session, patch, onExtracted, onHistory }) 
     <ScrollView style={styles.wrap} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
       {onHistory && (
         <TouchableOpacity style={styles.historyBtn} onPress={onHistory} hitSlop={6}>
-          <Text style={styles.historyText}>📜 Lịch sử phân tích</Text>
+          <Ionicons name="time-outline" size={15} color={C.cyan} />
+          <Text style={styles.historyText}>Lịch sử phân tích</Text>
         </TouchableOpacity>
       )}
 
@@ -163,7 +165,7 @@ export default function SetupScreen({ session, patch, onExtracted, onHistory }) 
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: C.bg },
-  historyBtn: { alignSelf: "flex-end", marginBottom: 10, paddingVertical: 4 },
+  historyBtn: { flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-end", marginBottom: 10, paddingVertical: 4 },
   historyText: { color: C.cyan, fontWeight: "700", fontSize: 13 },
   label: { color: C.textDim, fontSize: 12, fontWeight: "800", letterSpacing: 1, marginBottom: 8 },
   champRow: { flexDirection: "row", alignItems: "center", gap: 10 },

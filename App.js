@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { SafeAreaView, StatusBar, StyleSheet, View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { C, GRAD, glow } from "./src/theme";
 import { resolveDDragonVersion, resolveChampionRoster } from "./src/lib/images";
 import { useVersionCheck } from "./src/lib/useVersionCheck";
@@ -19,11 +20,11 @@ import QuickCounterScreen from "./src/screens/QuickCounterScreen";
 import HistoryScreen from "./src/screens/HistoryScreen";
 
 const TABS = [
-  { key: "home", icon: "📰", label: "Tin tức" },
-  { key: "champ", icon: "📖", label: "Tướng" },
-  { key: "counter", icon: "🗡️", label: "1v1" },
-  { key: "build", icon: "⚔️", label: "Build" },
-  { key: "suggest", icon: "🎯", label: "Đội hình" },
+  { key: "home", label: "Tin tức", set: "ion", icon: "newspaper-outline", iconActive: "newspaper" },
+  { key: "champ", label: "Tướng", set: "ion", icon: "library-outline", iconActive: "library" },
+  { key: "counter", label: "1v1", set: "mci", icon: "sword-cross", iconActive: "sword-cross" },
+  { key: "build", label: "Build", set: "ion", icon: "construct-outline", iconActive: "construct" },
+  { key: "suggest", label: "Đội hình", set: "ion", icon: "people-outline", iconActive: "people" },
 ];
 
 const EMPTY_BUILD = { champ: "", lane: "", imageUri: null, enemies: [], build: null };
@@ -174,6 +175,7 @@ export default function App() {
         <View style={styles.tabBar}>
           {TABS.map((t) => {
             const active = tab === t.key;
+            const Icon = t.set === "mci" ? MaterialCommunityIcons : Ionicons;
             return (
               <TouchableOpacity
                 key={t.key}
@@ -183,7 +185,11 @@ export default function App() {
               >
                 {active && <View style={styles.tabAccent} />}
                 <View style={[styles.tabIconWrap, active && styles.tabIconWrapActive]}>
-                  <Text style={[styles.tabIcon, active && styles.tabIconActive]}>{t.icon}</Text>
+                  <Icon
+                    name={active ? t.iconActive : t.icon}
+                    size={22}
+                    color={active ? C.cyan : C.textFaint}
+                  />
                 </View>
                 <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{t.label}</Text>
               </TouchableOpacity>

@@ -5,11 +5,22 @@ import React, { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { C, LANES } from "../theme";
 import { suggestChampions, findChampion, BUILD_LABELS } from "../data/champions";
 import { championIcon } from "../lib/images";
 import { matchupTips } from "../lib/matchup";
 import { suggestPicks } from "../lib/api";
+
+// Tiêu đề mục có icon vector
+function SectionTitle({ icon, children }) {
+  return (
+    <View style={styles.sectionRow}>
+      <Ionicons name={icon} size={15} color={C.cyan} />
+      <Text style={styles.sectionTxt}>{children}</Text>
+    </View>
+  );
+}
 
 const DANGER = {
   high: { t: "RẤT NGUY HIỂM", c: C.red },
@@ -103,7 +114,7 @@ export default function QuickCounterScreen() {
             )}
           </View>
 
-          <Text style={styles.section}>🛒 MUA SỚM</Text>
+          <SectionTitle icon="cart-outline">MUA SỚM</SectionTitle>
           {tips.shopping.length === 0 ? (
             <Text style={styles.dim}>Không có ưu tiên đặc biệt — build chuẩn theo tướng của bạn.</Text>
           ) : (
@@ -115,7 +126,7 @@ export default function QuickCounterScreen() {
             ))
           )}
 
-          <Text style={styles.section}>💡 LƯU Ý ĐI ĐƯỜNG</Text>
+          <SectionTitle icon="bulb-outline">LƯU Ý ĐI ĐƯỜNG</SectionTitle>
           {tips.tips.length === 0 ? (
             <Text style={styles.dim}>Matchup cân bằng — chơi chắc, farm tốt.</Text>
           ) : (
@@ -134,13 +145,16 @@ export default function QuickCounterScreen() {
                 <Text style={styles.aiBtnText}>Đang hỏi AI…</Text>
               </View>
             ) : (
-              <Text style={styles.aiBtnText}>🤖 Gợi ý tướng nên pick để khắc {enemy.vi}</Text>
+              <View style={styles.aiBtnRow}>
+                <Ionicons name="sparkles" size={16} color={C.text} />
+                <Text style={styles.aiBtnText}>Gợi ý tướng nên pick để khắc {enemy.vi}</Text>
+              </View>
             )}
           </TouchableOpacity>
 
           {picks && picks.length > 0 && (
             <View style={{ marginTop: 12 }}>
-              <Text style={styles.section}>🎯 NÊN PICK</Text>
+              <SectionTitle icon="locate">NÊN PICK</SectionTitle>
               {picks.map((p, i) => {
                 const champ = findChampion(p.name);
                 return (
@@ -184,6 +198,9 @@ const styles = StyleSheet.create({
   enemyMeta: { color: C.textDim, fontSize: 12, marginTop: 3 },
   dangerTag: { fontSize: 11, fontWeight: "800", borderWidth: 1, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
   section: { color: C.text, fontSize: 13, fontWeight: "900", letterSpacing: 0.5, marginTop: 20, marginBottom: 8 },
+  sectionRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 20, marginBottom: 8 },
+  sectionTxt: { color: C.text, fontSize: 13, fontWeight: "900", letterSpacing: 0.5 },
+  aiBtnRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   dim: { color: C.textFaint, fontSize: 13 },
   shopRow: { backgroundColor: C.card, borderRadius: 10, borderWidth: 1, borderColor: C.border, padding: 11, marginBottom: 7 },
   shopLabel: { color: C.amber, fontSize: 13, fontWeight: "800" },
