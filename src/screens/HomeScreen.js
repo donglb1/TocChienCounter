@@ -9,7 +9,7 @@ import { glow } from "../theme";
 import * as WebBrowser from "expo-web-browser";
 import { Ionicons } from "@expo/vector-icons";
 import { C } from "../theme";
-import { CornerBrackets, SectionTitle } from "../components/neon";
+import { CornerBrackets } from "../components/neon";
 import { fetchNews } from "../lib/api";
 
 // "2026-05-27T09:00:00Z" → "27/05/2026"
@@ -61,32 +61,28 @@ export default function HomeScreen() {
     }).catch(() => Linking.openURL(url).catch(() => {}));
   };
 
-  const renderItem = ({ item, index }) => {
-    const featured = index === 0; // tin mới nhất hiển thị lớn
+  const renderItem = ({ item }) => {
     return (
       <TouchableOpacity
-        style={[styles.card, featured && styles.cardFeatured]}
+        style={[styles.card, styles.cardFeatured]}
         activeOpacity={0.85}
         onPress={() => open(item.url)}
       >
         <View>
           {item.image ? (
-            <Image
-              source={{ uri: item.image }}
-              style={featured ? styles.imgFeatured : styles.img}
-            />
+            <Image source={{ uri: item.image }} style={styles.imgFeatured} />
           ) : (
-            <View style={[featured ? styles.imgFeatured : styles.img, styles.imgFallback]}>
+            <View style={[styles.imgFeatured, styles.imgFallback]}>
               <Text style={styles.imgFallbackText}>TỐC CHIẾN</Text>
             </View>
           )}
-          {featured && <CornerBrackets color={C.cyan} />}
+          <CornerBrackets color={C.cyan} />
         </View>
         <View style={styles.body}>
           {!!item.category && (
             <Text style={styles.category}>{item.category.toUpperCase()}</Text>
           )}
-          <Text style={featured ? styles.titleFeatured : styles.title} numberOfLines={3}>
+          <Text style={styles.titleFeatured} numberOfLines={3}>
             {item.title}
           </Text>
           <Text style={styles.date}>{fmtDate(item.publishedAt)}</Text>
@@ -114,9 +110,6 @@ export default function HomeScreen() {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={C.amber} />
       }
-      ListHeaderComponent={
-        <SectionTitle>TIN TỨC TỐC CHIẾN</SectionTitle>
-      }
       ListEmptyComponent={
         <View style={styles.center}>
           <Text style={styles.dim}>{error || "Không có tin."}</Text>
@@ -136,19 +129,16 @@ const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 40, gap: 12, minHeight: 240 },
   dim: { color: C.textDim, fontSize: 13, textAlign: "center" },
-  heading: { color: C.text, fontWeight: "900", fontSize: 18, letterSpacing: 1, marginBottom: 14 },
   card: {
     backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.border,
     marginBottom: 14, overflow: "hidden",
   },
   cardFeatured: { borderColor: "rgba(34,211,238,0.35)", ...glow(C.cyan, 22, 0.35) },
-  img: { width: "100%", height: 150, backgroundColor: C.cardAlt },
   imgFeatured: { width: "100%", height: 200, backgroundColor: C.cardAlt },
   imgFallback: { alignItems: "center", justifyContent: "center" },
   imgFallbackText: { color: C.textFaint, fontWeight: "800", letterSpacing: 2 },
   body: { padding: 13 },
   category: { color: C.cyan, fontSize: 11, fontWeight: "800", letterSpacing: 1, marginBottom: 6 },
-  title: { color: C.text, fontSize: 15, fontWeight: "700", lineHeight: 21 },
   titleFeatured: { color: C.text, fontSize: 18, fontWeight: "800", lineHeight: 25 },
   date: { color: C.textFaint, fontSize: 12, marginTop: 8 },
   fallbackBtn: {

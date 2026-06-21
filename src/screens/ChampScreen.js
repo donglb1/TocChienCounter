@@ -128,7 +128,11 @@ export default function ChampScreen() {
   // (vd nguồn liệt kê Samira cả "Baron"/Top dù cô ấy là xạ thủ AD → chỉ hiện ở AD).
   const primaryLaneOf = (c) => {
     const ls = c.lanes || laneMap[c.id] || [];
-    return ls[0] || null;
+    const primary = ls[0] || null;
+    // Nguồn gộp bot-lane (ADC + hỗ trợ) chung tag "Dragon"(AD). Tướng role Hỗ trợ đứng bot
+    // → ép về filter Hỗ trợ cho đúng (vd Milio bị nguồn để ở AD).
+    if (primary === "Dragon" && c.role === "Support") return "Support";
+    return primary;
   };
 
   const list = useMemo(() => {
