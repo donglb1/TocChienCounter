@@ -4,13 +4,13 @@ import React, { useEffect, useState } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator, Alert,
 } from "react-native";
-import { C } from "../theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { C, GRAD, glow, tierColor } from "../theme";
+import { TierBadge } from "../components/neon";
 import { findChampion } from "../data/champions";
 import { championIcon } from "../lib/images";
 import { suggestPicks, analyzeBuild } from "../lib/api";
 import { addHistory } from "../lib/storage";
-
-const TIER_COLOR = { S: C.amber, A: C.cyan, B: C.textDim };
 
 export default function PickScreen({ session, patch, onBack, onShowBuild }) {
   const [loading, setLoading] = useState(true);
@@ -95,6 +95,7 @@ export default function PickScreen({ session, patch, onBack, onShowBuild }) {
 
       {!loading && !error && summary ? (
         <View style={styles.summaryBox}>
+          <LinearGradient colors={GRAD.accentBar} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.summaryBar} />
           <Text style={styles.summaryLabel}>NHẬN ĐỊNH</Text>
           <Text style={styles.summaryText}>{summary}</Text>
         </View>
@@ -103,15 +104,17 @@ export default function PickScreen({ session, patch, onBack, onShowBuild }) {
       {!loading && !error && picks.map((p, idx) => {
         const champ = findChampion(p.name);
         const tier = (p.tier || "B").toUpperCase();
+        const tc = tierColor(tier);
         const busy = busyName === p.name;
         return (
           <TouchableOpacity
             key={`${p.name}-${idx}`}
-            style={styles.card}
+            style={[styles.card, { borderColor: tc + "55" }, glow(tc, 18, 0.28)]}
             activeOpacity={0.85}
             onPress={() => choosePick(p)}
             disabled={!!busyName}
           >
+            <View style={[styles.cardBar, { backgroundColor: tc }, glow(tc, 8, 0.8)]} />
             {champ ? (
               <Image source={{ uri: championIcon(champ) }} style={styles.avatar} />
             ) : (
@@ -122,9 +125,7 @@ export default function PickScreen({ session, patch, onBack, onShowBuild }) {
             <View style={{ flex: 1 }}>
               <View style={styles.nameRow}>
                 <Text style={styles.name}>{champ ? champ.vi : p.name}</Text>
-                <View style={[styles.tier, { borderColor: TIER_COLOR[tier] || C.textDim }]}>
-                  <Text style={[styles.tierText, { color: TIER_COLOR[tier] || C.textDim }]}>{tier}</Text>
-                </View>
+                <TierBadge tier={tier} />
                 {champ && <Text style={styles.role}>{champ.role}</Text>}
               </View>
               <Text style={styles.reason}>{p.reason}</Text>
@@ -156,20 +157,20 @@ const styles = StyleSheet.create({
   errorText: { color: C.red, fontSize: 13, textAlign: "center" },
   retry: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: C.border },
   retryText: { color: C.text, fontWeight: "700" },
-  summaryBox: { backgroundColor: C.cardAlt, borderRadius: 10, borderWidth: 1, borderColor: C.border, padding: 12, marginBottom: 14 },
-  summaryLabel: { color: C.textDim, fontSize: 11, fontWeight: "800", letterSpacing: 1, marginBottom: 6 },
-  summaryText: { color: C.text, fontSize: 13, lineHeight: 19 },
+  summaryBox: { backgroundColor: C.cardAlt, borderRadius: 13, borderWidth: 1, borderColor: "rgba(168,85,247,0.3)", paddingVertical: 14, paddingRight: 16, paddingLeft: 18, marginBottom: 16, overflow: "hidden" },
+  summaryBar: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3 },
+  summaryLabel: { color: "#c79bff", fontSize: 12, fontWeight: "800", letterSpacing: 1, marginBottom: 7 },
+  summaryText: { color: C.text, fontSize: 14, lineHeight: 20 },
   card: {
     flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card,
-    borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 12, marginBottom: 10,
+    borderRadius: 13, borderWidth: 1, borderColor: C.border, paddingVertical: 13, paddingRight: 13, paddingLeft: 17, marginBottom: 11, overflow: "hidden",
   },
+  cardBar: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3 },
   avatar: { width: 48, height: 48, borderRadius: 10, borderWidth: 1, borderColor: C.amberDim },
   avatarFallback: { backgroundColor: C.cardAlt, alignItems: "center", justifyContent: "center" },
   avatarFallbackText: { color: C.textDim, fontWeight: "800", fontSize: 14 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 3 },
   name: { color: C.text, fontWeight: "800", fontSize: 16 },
-  tier: { borderWidth: 1.5, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1 },
-  tierText: { fontWeight: "900", fontSize: 12 },
   role: { color: C.textFaint, fontSize: 12 },
   reason: { color: C.textDim, fontSize: 13, lineHeight: 18 },
   counters: { color: C.cyan, fontSize: 12, marginTop: 3 },

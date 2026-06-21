@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image, ScrollView,
 } from "react-native";
-import { C } from "../theme";
+import { C, glow } from "../theme";
 import { CHAMPIONS, BUILD_LABELS, findChampion, findChampionBySlug } from "../data/champions";
 import { getChampionBuild } from "../data/buildTemplates";
 import { findItem, findItemBySlug } from "../data/items";
@@ -124,14 +124,19 @@ export default function ChampScreen() {
   // tier của tướng (DB tĩnh tra qua tierMap[id]; tướng mới giữ tier trong chính object)
   const tierOf = (c) => tierMap[c.id] || c.tier;
   const slugOf = (c) => slugMap[c.id] || c.slug || champToSlug(c);
-  const lanesOf = (c) => c.lanes || laneMap[c.id] || [];
+  // Lane CHÍNH = lane đầu tiên tier list liệt kê. Lọc theo lane chính để ẩn kèo phụ/off-meta
+  // (vd nguồn liệt kê Samira cả "Baron"/Top dù cô ấy là xạ thủ AD → chỉ hiện ở AD).
+  const primaryLaneOf = (c) => {
+    const ls = c.lanes || laneMap[c.id] || [];
+    return ls[0] || null;
+  };
 
   const list = useMemo(() => {
     const q = norm(query);
     let arr = q
       ? roster.filter((c) => norm(c.name).includes(q) || norm(c.vi).includes(q))
       : roster;
-    if (laneFilter !== "all") arr = arr.filter((c) => lanesOf(c).includes(laneFilter));
+    if (laneFilter !== "all") arr = arr.filter((c) => primaryLaneOf(c) === laneFilter);
     const favSet = new Set(favs);
     const tierIdx = (c) => {
       const t = tierOf(c);
@@ -395,7 +400,7 @@ const styles = StyleSheet.create({
   },
   laneRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 10 },
   laneChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: C.border, backgroundColor: C.card },
-  laneChipOn: { borderColor: C.cyan, backgroundColor: C.cyanDim },
+  laneChipOn: { borderColor: C.violet, backgroundColor: C.violetDim, ...glow(C.violet, 14, 0.4) },
   laneChipText: { color: C.textDim, fontSize: 13, fontWeight: "700" },
   laneChipTextOn: { color: C.cyan },
   sortRow: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 10 },

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, Alert,
 } from "react-native";
-import { C, LANES } from "../theme";
+import { C, LANES, glow } from "../theme";
 import { suggestChampions, findChampion } from "../data/champions";
 import { championIcon } from "../lib/images";
 import GradientButton from "../components/GradientButton";
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   suggestRole: { color: C.textFaint, fontSize: 12 },
   laneRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   laneChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: C.border, backgroundColor: C.card },
-  laneChipActive: { backgroundColor: C.cyanDim, borderColor: C.cyan },
+  laneChipActive: { backgroundColor: C.violetDim, borderColor: C.violet, ...glow(C.violet, 14, 0.4) },
   laneText: { color: C.textDim, fontWeight: "600", fontSize: 13 },
   laneTextActive: { color: C.text },
   cta: {

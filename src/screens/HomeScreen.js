@@ -5,9 +5,11 @@ import {
   View, Text, TouchableOpacity, StyleSheet, FlatList, Image,
   ActivityIndicator, RefreshControl, Linking,
 } from "react-native";
+import { glow } from "../theme";
 import * as WebBrowser from "expo-web-browser";
 import { Ionicons } from "@expo/vector-icons";
 import { C } from "../theme";
+import { CornerBrackets, SectionTitle } from "../components/neon";
 import { fetchNews } from "../lib/api";
 
 // "2026-05-27T09:00:00Z" → "27/05/2026"
@@ -67,16 +69,19 @@ export default function HomeScreen() {
         activeOpacity={0.85}
         onPress={() => open(item.url)}
       >
-        {item.image ? (
-          <Image
-            source={{ uri: item.image }}
-            style={featured ? styles.imgFeatured : styles.img}
-          />
-        ) : (
-          <View style={[featured ? styles.imgFeatured : styles.img, styles.imgFallback]}>
-            <Text style={styles.imgFallbackText}>TỐC CHIẾN</Text>
-          </View>
-        )}
+        <View>
+          {item.image ? (
+            <Image
+              source={{ uri: item.image }}
+              style={featured ? styles.imgFeatured : styles.img}
+            />
+          ) : (
+            <View style={[featured ? styles.imgFeatured : styles.img, styles.imgFallback]}>
+              <Text style={styles.imgFallbackText}>TỐC CHIẾN</Text>
+            </View>
+          )}
+          {featured && <CornerBrackets color={C.cyan} />}
+        </View>
         <View style={styles.body}>
           {!!item.category && (
             <Text style={styles.category}>{item.category.toUpperCase()}</Text>
@@ -110,7 +115,7 @@ export default function HomeScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={C.amber} />
       }
       ListHeaderComponent={
-        <Text style={styles.heading}>TIN TỨC TỐC CHIẾN</Text>
+        <SectionTitle>TIN TỨC TỐC CHIẾN</SectionTitle>
       }
       ListEmptyComponent={
         <View style={styles.center}>
@@ -134,9 +139,9 @@ const styles = StyleSheet.create({
   heading: { color: C.text, fontWeight: "900", fontSize: 18, letterSpacing: 1, marginBottom: 14 },
   card: {
     backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.border,
-    marginBottom: 12, overflow: "hidden",
+    marginBottom: 14, overflow: "hidden",
   },
-  cardFeatured: { borderColor: C.amberDim },
+  cardFeatured: { borderColor: "rgba(34,211,238,0.35)", ...glow(C.cyan, 22, 0.35) },
   img: { width: "100%", height: 150, backgroundColor: C.cardAlt },
   imgFeatured: { width: "100%", height: 200, backgroundColor: C.cardAlt },
   imgFallback: { alignItems: "center", justifyContent: "center" },

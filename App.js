@@ -6,6 +6,8 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { C, GRAD, glow } from "./src/theme";
+// accent chủ đạo theo thiết kế = TÍM
+const ACCENT = C.violet;
 import { resolveDDragonVersion, resolveChampionRoster } from "./src/lib/images";
 import { useVersionCheck } from "./src/lib/useVersionCheck";
 import { fetchNews, resolveItemCatalog } from "./src/lib/api";
@@ -76,6 +78,13 @@ export default function App() {
           end={{ x: 1, y: 1 }}
           style={styles.header}
         >
+          {/* gạch gradient cyan→tím glow ở mép dưới-trái header */}
+          <LinearGradient
+            colors={GRAD.accentBar}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.headerAccentBar}
+          />
           <View>
             <Text style={styles.brand}>
               TỐC CHIẾN <Text style={styles.brandAccent}>COUNTER</Text>
@@ -189,7 +198,7 @@ export default function App() {
                   <Icon
                     name={active ? t.iconActive : t.icon}
                     size={22}
-                    color={active ? C.cyan : C.textFaint}
+                    color={active ? ACCENT : C.textFaint}
                   />
                 </View>
                 <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{t.label}</Text>
@@ -207,7 +216,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 16, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: "#1a2748",
+    borderBottomWidth: 1, borderBottomColor: C.border,
+  },
+  headerAccentBar: {
+    position: "absolute", left: 0, bottom: -1, width: 64, height: 2,
+    ...glow(C.violet, 8, 0.9),
   },
   brand: { color: C.text, fontWeight: "900", fontSize: 17, letterSpacing: 1.5 },
   brandAccent: { color: C.cyan, textShadowColor: C.cyan, textShadowRadius: 10, textShadowOffset: { width: 0, height: 0 } },
@@ -221,18 +234,18 @@ const styles = StyleSheet.create({
   step: { color: C.textDim, fontWeight: "700", fontSize: 12 },
   content: { flex: 1 },
   tabBar: {
-    flexDirection: "row", borderTopWidth: 1, borderTopColor: "#16223e",
-    backgroundColor: C.bgAlt, paddingTop: 9, paddingBottom: 7,
+    flexDirection: "row", borderTopWidth: 1, borderTopColor: C.border,
+    backgroundColor: "rgba(10,8,18,0.92)", paddingTop: 9, paddingBottom: 7,
   },
   tabItem: { flex: 1, alignItems: "center", gap: 3 },
   tabAccent: {
     position: "absolute", top: -9, width: 30, height: 3, borderRadius: 2,
-    backgroundColor: C.cyan, ...glow(C.cyan, 8, 0.9),
+    backgroundColor: ACCENT, ...glow(ACCENT, 8, 0.9),
   },
   tabIconWrap: { width: 40, height: 30, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  tabIconWrapActive: { backgroundColor: "rgba(39,227,255,0.10)", ...glow(C.cyan, 10, 0.4) },
+  tabIconWrapActive: { backgroundColor: "rgba(168,85,247,0.12)", ...glow(ACCENT, 10, 0.4) },
   tabIcon: { fontSize: 20, opacity: 0.45 },
   tabIconActive: { opacity: 1 },
   tabLabel: { color: C.textFaint, fontSize: 11, fontWeight: "700" },
-  tabLabelActive: { color: C.cyan },
+  tabLabelActive: { color: ACCENT },
 });

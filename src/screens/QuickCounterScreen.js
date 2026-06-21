@@ -6,7 +6,8 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { C, LANES } from "../theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { C, GRAD, LANES, glow } from "../theme";
 import { suggestChampions, findChampion, BUILD_LABELS } from "../data/champions";
 import { championIcon } from "../lib/images";
 import { matchupTips } from "../lib/matchup";
@@ -120,6 +121,7 @@ export default function QuickCounterScreen() {
           ) : (
             tips.shopping.map((s, i) => (
               <View key={i} style={styles.shopRow}>
+                <LinearGradient colors={GRAD.accentBar} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.shopBar} />
                 <Text style={styles.shopLabel}>{s.label}</Text>
                 <Text style={styles.shopNote}>{s.note}</Text>
               </View>
@@ -183,7 +185,7 @@ const styles = StyleSheet.create({
   label: { color: C.textDim, fontSize: 12, fontWeight: "800", letterSpacing: 1, marginBottom: 8 },
   laneRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   laneChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: C.border, backgroundColor: C.card },
-  laneChipActive: { backgroundColor: C.cyanDim, borderColor: C.cyan },
+  laneChipActive: { backgroundColor: C.violetDim, borderColor: C.violet, ...glow(C.violet, 14, 0.4) },
   laneText: { color: C.textDim, fontWeight: "600", fontSize: 13 },
   laneTextActive: { color: C.text },
   input: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: C.text, fontSize: 16 },
@@ -192,7 +194,7 @@ const styles = StyleSheet.create({
   suggestAvatar: { width: 28, height: 28, borderRadius: 6 },
   suggestText: { color: C.text, fontSize: 15, fontWeight: "600", flex: 1 },
   suggestRole: { color: C.textFaint, fontSize: 12 },
-  enemyHead: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 20, padding: 12, backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border },
+  enemyHead: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 20, padding: 14, backgroundColor: "#160d14", borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,93,115,0.4)", ...glow(C.red, 20, 0.35) },
   enemyAvatar: { width: 52, height: 52, borderRadius: 11, borderWidth: 1, borderColor: C.red },
   enemyName: { color: C.text, fontSize: 18, fontWeight: "800" },
   enemyMeta: { color: C.textDim, fontSize: 12, marginTop: 3 },
@@ -202,8 +204,9 @@ const styles = StyleSheet.create({
   sectionTxt: { color: C.text, fontSize: 13, fontWeight: "900", letterSpacing: 0.5 },
   aiBtnRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   dim: { color: C.textFaint, fontSize: 13 },
-  shopRow: { backgroundColor: C.card, borderRadius: 10, borderWidth: 1, borderColor: C.border, padding: 11, marginBottom: 7 },
-  shopLabel: { color: C.amber, fontSize: 13, fontWeight: "800" },
+  shopRow: { backgroundColor: C.card, borderRadius: 11, borderWidth: 1, borderColor: C.border, paddingVertical: 12, paddingRight: 14, paddingLeft: 16, marginBottom: 8, overflow: "hidden" },
+  shopBar: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3 },
+  shopLabel: { color: C.warn, fontSize: 14, fontWeight: "800" },
   shopNote: { color: C.textDim, fontSize: 13, marginTop: 3 },
   tipRow: { flexDirection: "row", gap: 8, marginBottom: 7 },
   tipDot: { color: C.cyan, fontSize: 15, fontWeight: "900" },

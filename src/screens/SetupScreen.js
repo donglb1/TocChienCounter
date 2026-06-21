@@ -6,12 +6,13 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
-import { C, LANES } from "../theme";
+import { C, LANES, glow } from "../theme";
 import { suggestChampions, findChampion } from "../data/champions";
 import { championIcon } from "../lib/images";
 import { extractChampions } from "../lib/api";
 import { Ionicons } from "@expo/vector-icons";
 import GradientButton from "../components/GradientButton";
+import { CornerBrackets } from "../components/neon";
 
 const MAX_EDGE = 1568; // resize cạnh dài → đủ rõ để đọc, nhẹ token
 
@@ -144,11 +145,20 @@ export default function SetupScreen({ session, patch, onExtracted, onHistory }) 
       </View>
 
       <Text style={[styles.label, { marginTop: 18 }]}>ẢNH TEAM ĐỊCH</Text>
-      <TouchableOpacity style={styles.imageBox} onPress={pickImage} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={[styles.imageBox, !imageUri && styles.imageBoxEmpty]}
+        onPress={pickImage}
+        activeOpacity={0.8}
+      >
         {imageUri ? (
           <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="contain" />
         ) : (
-          <Text style={styles.imageHint}>Chạm để chọn ảnh chụp màn hình{"\n"}(màn chọn tướng / bảng điểm)</Text>
+          <>
+            <CornerBrackets color="rgba(34,211,238,0.6)" size={16} inset={10} />
+            <Ionicons name="image-outline" size={38} color={C.violet} />
+            <Text style={styles.imageHintTitle}>Tải ảnh chọn tướng</Text>
+            <Text style={styles.imageHint}>Chụp màn hình team địch để AI đọc</Text>
+          </>
         )}
       </TouchableOpacity>
 
@@ -181,15 +191,17 @@ const styles = StyleSheet.create({
   suggestRole: { color: C.textFaint, fontSize: 12 },
   laneRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   laneChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: C.border, backgroundColor: C.card },
-  laneChipActive: { backgroundColor: C.cyanDim, borderColor: C.cyan },
+  laneChipActive: { backgroundColor: C.violetDim, borderColor: C.violet, ...glow(C.violet, 14, 0.4) },
   laneText: { color: C.textDim, fontWeight: "600", fontSize: 13 },
   laneTextActive: { color: C.text },
   imageBox: {
-    height: 200, borderRadius: 12, borderWidth: 1, borderColor: C.border,
-    backgroundColor: C.card, alignItems: "center", justifyContent: "center", overflow: "hidden",
+    height: 200, borderRadius: 14, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, alignItems: "center", justifyContent: "center", overflow: "hidden", gap: 8,
   },
+  imageBoxEmpty: { borderWidth: 1.5, borderStyle: "dashed", borderColor: "rgba(168,85,247,0.45)", backgroundColor: C.cardAlt },
   preview: { width: "100%", height: "100%" },
-  imageHint: { color: C.textFaint, textAlign: "center", fontSize: 13, lineHeight: 20 },
+  imageHintTitle: { color: C.text, fontWeight: "700", fontSize: 15 },
+  imageHint: { color: C.textFaint, textAlign: "center", fontSize: 13, lineHeight: 18 },
   cta: {
     marginTop: 22, backgroundColor: C.amber, borderRadius: 12, paddingVertical: 15,
     alignItems: "center", justifyContent: "center",
