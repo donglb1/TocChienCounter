@@ -9,6 +9,10 @@ import { repairJson } from "./repairJson";
 import { ITEM_CATALOG } from "../data/items";
 import { CHAMPION_ALLOWLIST, findChampion, BUILD_LABELS } from "../data/champions";
 import { KEYSTONE_CATALOG, SPELL_CATALOG } from "../data/runes";
+import { setLiveItems, getLiveChampMeta } from "./liveData";
+import { getCached, setCached } from "./storage";
+
+const ITEM_CATALOG_TTL = 24 * 60 * 60 * 1000; // 24h
 
 const RANGE_LABEL = { xa: "tầm xa", can: "cận chiến" };
 const SPIKE_LABEL = { som: "mạnh sớm", giua: "mạnh giữa trận", muon: "mạnh cuối trận" };
@@ -17,7 +21,13 @@ const SPIKE_LABEL = { som: "mạnh sớm", giua: "mạnh giữa trận", muon: "
 // Tướng lạ (không có trong DB) → chỉ gửi tên để model tự suy luận.
 function champMeta(name) {
   const c = findChampion(name);
-  if (!c) return { name, unknown: true };
+  if (!c) {
+    // Tướng mới chưa có trong DB tĩnh → suy ra damageType/role từ DDragon (live) để AI có chỗ bám.
+    const live = getLiveChampMeta(name);
+    return live
+      ? { name, dmg: live.dmg, role: live.role, unknown: true }
+      : { name, unknown: true };
+  }
   return {
     name: c.name,
     vi: c.vi,
@@ -124,6 +134,30 @@ export async function fetchChampBuild(slug) {
   const res = await fetch(`${BACKEND_URL}/api/champbuild?slug=${encodeURIComponent(slug)}`);
   if (!res.ok) throw new Error(`Backend lỗi ${res.status}`);
   return await res.json(); // { slug, starting, boots, core, situational, ok, source }
+}
+
+// Nạp catalog item Wild Rift (tên + icon thật) từ backend → liveData. Gọi 1 lần lúc app mở.
+// Cache-first: áp catalog đã lưu ngay (hiện icon/tên kể cả offline), chỉ fetch lại khi hết TTL.
+// Lỗi mạng → giữ cache (nếu có) hoặc DB tĩnh + icon DDragon như cũ.
+export async function resolveItemCatalog() {
+  const cached = await getCached("item-catalog");
+  if (cached && Array.isArray(cached.data)) setLiveItems(cached.data);
+  if (cached && Date.now() - cached.fetchedAt < ITEM_CATALOG_TTL) {
+    return Array.isArray(cached.data) ? cached.data.length : 0; // còn tươi → bỏ qua mạng
+  }
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/items`);
+    if (!res.ok) return 0;
+    const data = await res.json();
+    const items = data.items || [];
+    if (items.length) {
+      setLiveItems(items);
+      setCached("item-catalog", items); // chỉ ghi đè cache khi cào được data thật
+    }
+    return items.length;
+  } catch (_) {
+    return 0;
+  }
 }
 
 async function safeText(res) {

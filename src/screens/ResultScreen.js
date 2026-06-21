@@ -2,6 +2,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from "react-native";
 import { C } from "../theme";
+import { Ionicons } from "@expo/vector-icons";
 import { findItem } from "../data/items";
 import { findKeystone, findSpell } from "../data/runes";
 import { itemIcon } from "../lib/images";
@@ -246,6 +247,7 @@ const styles = StyleSheet.create({
   gemImg: { width: 38, height: 38, borderRadius: 9, borderWidth: 1.5, borderColor: C.amberDim, backgroundColor: C.cardAlt },
   gemText: { color: "#fff", fontWeight: "900", fontSize: 13 },
   gemName: { color: C.text, fontWeight: "700", fontSize: 14, flexShrink: 1 },
+  outBadgeRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2 },
   outBadge: { color: C.warn, fontSize: 10, fontWeight: "800" },
   typeTag: { color: C.textFaint, fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },
   reason: { color: C.textDim, fontSize: 13, lineHeight: 19, marginTop: 9 },

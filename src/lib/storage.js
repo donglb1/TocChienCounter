@@ -6,6 +6,32 @@ const FAV_KEY = "@tcc/favorites"; // mảng champion id
 const HIST_KEY = "@tcc/history"; // mảng entry phân tích
 const HIST_MAX = 30;
 
+// ───────── Cache DATA LIVE (kèm timestamp để TTL) ─────────
+// Dùng cho catalog item + roster tướng: đọc cache hiện ngay (kể cả offline),
+// chỉ fetch mạng lại khi cache cũ hơn TTL. Lỗi storage → trả null, app fetch như thường.
+const CACHE_PREFIX = "@tcc/cache/";
+
+export async function getCached(key) {
+  try {
+    const raw = await AsyncStorage.getItem(CACHE_PREFIX + key);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || typeof obj.fetchedAt !== "number") return null;
+    return obj; // { data, fetchedAt }
+  } catch (_) {
+    return null;
+  }
+}
+
+export async function setCached(key, data) {
+  try {
+    await AsyncStorage.setItem(
+      CACHE_PREFIX + key,
+      JSON.stringify({ data, fetchedAt: Date.now() })
+    );
+  } catch (_) {}
+}
+
 // ───────── Tướng yêu thích ─────────
 export async function getFavorites() {
   try {

@@ -8,7 +8,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { C, GRAD, glow } from "./src/theme";
 import { resolveDDragonVersion, resolveChampionRoster } from "./src/lib/images";
 import { useVersionCheck } from "./src/lib/useVersionCheck";
-import { fetchNews } from "./src/lib/api";
+import { fetchNews, resolveItemCatalog } from "./src/lib/api";
 import HomeScreen from "./src/screens/HomeScreen";
 import SetupScreen from "./src/screens/SetupScreen";
 import ConfirmScreen from "./src/screens/ConfirmScreen";
@@ -47,6 +47,7 @@ export default function App() {
   const [patch, setPatch] = useState(null);
   useEffect(() => {
     resolveDDragonVersion().then(() => resolveChampionRoster());
+    resolveItemCatalog(); // nạp catalog item Wild Rift (tên + icon thật) tự bám patch
     fetchNews().then((d) => setPatch(d.patch)).catch(() => {});
   }, []);
 

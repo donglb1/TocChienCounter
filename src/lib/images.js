@@ -1,6 +1,12 @@
 // src/lib/images.js
 // Lấy icon tướng từ Riot Data Dragon CDN (icon LoL PC — sát với Wild Rift đủ dùng).
-// Wild Rift KHÔNG có CDN item công khai → item dùng ô lục giác fallback ở UI.
+// Item: ưu tiên icon Wild Rift THẬT từ catalog live (backend /api/items), fallback icon
+// LoL PC (DDragon) rồi ô lục giác ở UI.
+
+import { setLiveChampMeta, getLiveItemByName } from "./liveData";
+import { getCached, setCached } from "./storage";
+
+const DATA_TTL = 24 * 60 * 60 * 1000; // 24h: trong TTL thì dùng cache, hết hạn mới fetch lại
 
 let DDRAGON_VERSION = "16.12.1"; // fallback nếu chưa resolve được version mới nhất
 
@@ -28,16 +34,23 @@ const ID_MAP = {
   LeBlanc: "Leblanc",
 };
 
-// Gọi 1 lần khi app mount để lấy version mới nhất
+// Gọi 1 lần khi app mount để lấy version mới nhất. Cache-first: dùng version đã lưu
+// (kể cả offline) rồi chỉ fetch lại khi cache cũ hơn TTL.
 export async function resolveDDragonVersion() {
+  const cached = await getCached("ddragon-version");
+  if (cached && cached.data) DDRAGON_VERSION = cached.data;
+  if (cached && Date.now() - cached.fetchedAt < DATA_TTL) return DDRAGON_VERSION; // còn tươi → bỏ qua mạng
   try {
     const res = await fetch(
       "https://ddragon.leagueoflegends.com/api/versions.json"
     );
     const list = await res.json();
-    if (Array.isArray(list) && list[0]) DDRAGON_VERSION = list[0];
+    if (Array.isArray(list) && list[0]) {
+      DDRAGON_VERSION = list[0];
+      setCached("ddragon-version", DDRAGON_VERSION);
+    }
   } catch (_) {
-    // giữ fallback, không chặn app
+    // giữ fallback/cache, không chặn app
   }
   return DDRAGON_VERSION;
 }
@@ -51,22 +64,43 @@ function normName(s) {
     .replace(/['’.\s&]/g, "")
     .toLowerCase();
 }
+// Nạp roster: build name→id map (icon) + metadata (damageType/role) cho tướng mới.
+// Nhận shape rút gọn { [id]: {id, name, tags, info} } — dùng được cho cả cache lẫn fetch live.
+function applyRoster(data) {
+  const map = {};
+  for (const k in data || {}) {
+    const c = data[k];
+    if (!c || !c.name || !c.id) continue;
+    map[normName(c.name)] = c.id;
+    map[normName(c.id)] = c.id;
+  }
+  DDRAGON_NAME_MAP = map;
+  setLiveChampMeta(data || {});
+}
+
+// Cache-first: áp roster đã lưu ngay (hiện icon/metadata kể cả offline), chỉ tải lại khi hết TTL.
 export async function resolveChampionRoster() {
+  const cached = await getCached("ddragon-roster");
+  if (cached && cached.data) applyRoster(cached.data);
+  if (cached && Date.now() - cached.fetchedAt < DATA_TTL) return DDRAGON_NAME_MAP; // còn tươi
   try {
     if (!DDRAGON_VERSION) await resolveDDragonVersion();
     const res = await fetch(
       `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/data/en_US/champion.json`
     );
     const json = await res.json();
-    const map = {};
+    // Rút gọn trước khi lưu: chỉ giữ field thật sự dùng (id/name/tags/info) cho cache nhẹ.
+    const slim = {};
     for (const k in json.data || {}) {
       const c = json.data[k];
-      map[normName(c.name)] = c.id;
-      map[normName(c.id)] = c.id;
+      slim[c.id] = { id: c.id, name: c.name, tags: c.tags, info: c.info };
     }
-    DDRAGON_NAME_MAP = map;
+    if (Object.keys(slim).length) {
+      applyRoster(slim);
+      setCached("ddragon-roster", slim);
+    }
   } catch (_) {
-    // không chặn app — tướng mới sẽ dùng icon fallback chữ
+    // không chặn app — đã có cache (nếu có) hoặc fallback chữ
   }
   return DDRAGON_NAME_MAP;
 }
@@ -185,11 +219,14 @@ const ITEM_DDRAGON_ID = {
   "Spectral Sickle": "3862",
 };
 
-// Item icon: ưu tiên img trong DB → map DDragon → null (UI vẽ lục giác)
+// Item icon: ưu tiên img sẵn trong DB → icon Wild Rift THẬT (catalog live) →
+// icon LoL PC mượn tạm (DDragon) → null (UI vẽ ô lục giác).
 export function itemIcon(item) {
   if (!item) return null;
   if (item.img) return item.img;
+  const live = getLiveItemByName(item.name);
+  if (live && live.icon) return live.icon;
   const id = ITEM_DDRAGON_ID[item.name];
-  if (!id) return null;
-  return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/item/${id}.png`;
+  if (id) return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/item/${id}.png`;
+  return null;
 }

@@ -13,7 +13,8 @@
 //   desc : MÔ TẢ CHỨC NĂNG ngắn gọn (chỉ số chính + nội tại + khắc/hợp gì) — gửi cho AI
 //          để phân tích DỰA TRÊN THUỘC TÍNH thật, không đoán theo trí nhớ. Cố ý viết
 //          ĐỊNH TÍNH (không nêu số cụ thể) để bền với thay đổi chỉ số giữa các bản.
-//   img  : URL icon — Wild Rift KHÔNG có CDN item công khai → null, UI vẽ ô lục giác
+//   img  : URL icon cố định (thường null). Khi null, itemIcon() tự lấy icon Wild Rift THẬT
+//          từ catalog live (backend /api/items) → fallback icon LoL PC → ô lục giác ở UI.
 //
 // Tag chuẩn: armor, mr, hp, grievous (Vết Thương Sâu), revive, tenacity, antiCrit,
 //   attackSpeedSlow, lifesteal, omnivamp, magicPen, armorPen, slow, shield, healShield,
@@ -148,6 +149,23 @@ export const ITEM_CATALOG = ITEMS.map((i) => ({
 
 // Map slug item (từ web build) → item DB. Khớp dạng "youmuus-ghostblade", "black-cleaver"…
 import { noDiacritics } from "../theme";
+import { getLiveItemByName, getLiveItemBySlug } from "../lib/liveData";
+
+// Bọc 1 entry item live (từ catalog backend) thành shape giống item DB tĩnh để UI dùng chung.
+// Đánh dấu _live để biết là item ngoài DB curated (chưa có desc grounding cho AI).
+function liveToItem(live) {
+  if (!live) return null;
+  return {
+    id: `live:${live.slug || live.name}`,
+    name: live.name,
+    vi: live.name, // catalog web chỉ có tên Anh
+    type: live.type || "situational",
+    tags: [],
+    desc: null,
+    img: live.icon || null,
+    _live: true,
+  };
+}
 
 const ITEM_SLUG_ALIAS = {
   "mercury-treads": "Mercury's Treads", // web bỏ chữ "s"
@@ -167,15 +185,22 @@ export function findItemBySlug(slug) {
   if (!slug) return null;
   const s = String(slug).toLowerCase();
   if (ITEM_SLUG_ALIAS[s]) return findItem(ITEM_SLUG_ALIAS[s]);
-  return ITEM_SLUG_MAP[s] || ITEM_SLUG_MAP[s.replace(/-/g, "")] || null;
+  return (
+    ITEM_SLUG_MAP[s] ||
+    ITEM_SLUG_MAP[s.replace(/-/g, "")] ||
+    liveToItem(getLiveItemBySlug(s)) || // item mới ngoài DB tĩnh → catalog live
+    null
+  );
 }
 
-// Tra item theo tên (Anh hoặc Việt). Trả null nếu ngoài danh sách → UI bật ⚠ NGOÀI DS
+// Tra item theo tên (Anh hoặc Việt). DB tĩnh trước → catalog live (item mới) → null.
+// Chỉ null khi item KHÔNG có ở cả hai nguồn → UI mới bật ⚠ NGOÀI DS.
 export function findItem(query) {
   const q = noDiacritics(query);
   if (!q) return null;
   return (
     ITEMS.find((i) => noDiacritics(i.name) === q || noDiacritics(i.vi) === q) ||
+    liveToItem(getLiveItemByName(query)) ||
     null
   );
 }
