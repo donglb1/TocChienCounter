@@ -8,6 +8,7 @@ import { findKeystone, findSpell } from "../data/runes";
 import { itemIcon } from "../lib/images";
 import { useLiveData } from "../lib/liveData";
 import ItemDetailModal from "../components/ItemDetailModal";
+import RuneDetailModal from "../components/RuneDetailModal";
 
 // Màu gem theo loại item (fallback khi không có icon CDN)
 const GEM = {
@@ -64,6 +65,7 @@ export default function ResultScreen({
   editLabel = "Sửa team địch",
 }) {
   const [detailItem, setDetailItem] = React.useState(null);
+  const [detailRune, setDetailRune] = React.useState(null);
   const b = session.build || {};
   const profile = b.teamProfile || {};
   const ad = clamp(profile.adPercent);
@@ -127,23 +129,47 @@ export default function ResultScreen({
         </View>
       )}
 
-      {/* Ngọc & Phép bổ trợ */}
+      {/* Ngọc & Phép bổ trợ — chạm 1 dòng để xem tác dụng */}
       {(b.keystone?.name || (Array.isArray(b.spells) && b.spells.length > 0)) && (
         <View style={styles.swCard}>
           <Text style={styles.cardTitle}>NGỌC & PHÉP BỔ TRỢ</Text>
           {b.keystone?.name ? (
-            <View style={styles.rsRow}>
+            <TouchableOpacity
+              style={styles.rsRow}
+              activeOpacity={0.7}
+              onPress={() => setDetailRune({ ...(findKeystone(b.keystone.name) || { name: b.keystone.name }), kind: "keystone" })}
+            >
               <Text style={styles.rsBadge}>NGỌC</Text>
               <Text style={styles.rsName}>{keystoneName(b.keystone.name)}</Text>
               {b.keystone.reason ? <Text style={styles.rsReason}>· {b.keystone.reason}</Text> : null}
-            </View>
+              <Ionicons name="information-circle-outline" size={15} color={C.textFaint} />
+            </TouchableOpacity>
           ) : null}
+          {(b.minorRunes || []).filter((r) => r && r.name).map((r, i) => (
+            <TouchableOpacity
+              key={`m${i}`}
+              style={styles.rsRow}
+              activeOpacity={0.7}
+              onPress={() => setDetailRune({ ...(findKeystone(r.name) || { name: r.name }), kind: "minor" })}
+            >
+              <Text style={[styles.rsBadge, styles.rsBadgeMinor]}>NGỌC PHỤ</Text>
+              <Text style={styles.rsName}>{keystoneName(r.name)}</Text>
+              {r.reason ? <Text style={styles.rsReason}>· {r.reason}</Text> : null}
+              <Ionicons name="information-circle-outline" size={15} color={C.textFaint} />
+            </TouchableOpacity>
+          ))}
           {(b.spells || []).filter((s) => s && s.name).map((s, i) => (
-            <View key={i} style={styles.rsRow}>
+            <TouchableOpacity
+              key={i}
+              style={styles.rsRow}
+              activeOpacity={0.7}
+              onPress={() => setDetailRune({ ...(findSpell(s.name) || { name: s.name }), kind: "spell" })}
+            >
               <Text style={[styles.rsBadge, styles.rsBadgeSpell]}>PHÉP</Text>
               <Text style={styles.rsName}>{spellName(s.name)}</Text>
               {s.reason ? <Text style={styles.rsReason}>· {s.reason}</Text> : null}
-            </View>
+              <Ionicons name="information-circle-outline" size={15} color={C.textFaint} />
+            </TouchableOpacity>
           ))}
         </View>
       )}
@@ -190,6 +216,7 @@ export default function ResultScreen({
       </View>
 
       <ItemDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
+      <RuneDetailModal data={detailRune} onClose={() => setDetailRune(null)} />
     </ScrollView>
   );
 }
@@ -251,6 +278,7 @@ const styles = StyleSheet.create({
   rsRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 7, marginTop: 7 },
   rsBadge: { color: C.amber, borderColor: C.amberDim, borderWidth: 1, borderRadius: 5, fontSize: 10, fontWeight: "800", paddingHorizontal: 6, paddingVertical: 2 },
   rsBadgeSpell: { color: C.cyan, borderColor: C.cyanDim },
+  rsBadgeMinor: { color: C.violet, borderColor: C.violetDim },
   rsName: { color: C.text, fontSize: 14, fontWeight: "700" },
   rsReason: { color: C.textDim, fontSize: 12, flexShrink: 1 },
   section: { color: C.amber, fontSize: 13, fontWeight: "800", letterSpacing: 1, marginTop: 22, marginBottom: 12 },
