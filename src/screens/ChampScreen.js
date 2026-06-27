@@ -257,10 +257,10 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
     return () => { alive = false; };
   }, [champ.name]);
 
-  const runAi = async () => {
+  const runAi = async (force) => {
     setAiLoading(true); setAiError("");
     try {
-      const b = await aiChampionBuild(champ.name);
+      const b = await aiChampionBuild(champ.name, null, force);
       setAi(b);
     } catch (e) {
       setAiError(String(e.message || e));
@@ -270,10 +270,12 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
   };
 
   // Nguồn build: AI (nếu có) → build mẫu offline. KHÔNG còn cào lolwildriftbuild (lẫn item PC).
+  // LỌC build AI chỉ giữ item có trong DB curated (chặn AI bịa item ngoài catalog, vd Kraken Slayer là NGỌC).
+  const curate = (names) => (names || []).filter((n) => findItem(n, true));
   const usingAi = !!ai;
-  const boots = usingAi ? (ai.boots ? [ai.boots] : []) : tpl ? [tpl.boots] : [];
-  const core = usingAi ? (ai.core || []) : tpl ? tpl.core : [];
-  const situational = usingAi ? (ai.situational || []) : tpl ? tpl.situational : [];
+  const boots = usingAi ? (ai.boots && findItem(ai.boots, true) ? [ai.boots] : []) : tpl ? [tpl.boots] : [];
+  const core = usingAi ? curate(ai.core) : tpl ? tpl.core : [];
+  const situational = usingAi ? curate(ai.situational) : tpl ? tpl.situational : [];
   const keystone = usingAi ? ai.keystone?.name : tpl?.keystone;
   const spells = usingAi ? (ai.spells || []).map((s) => s.name) : tpl?.spells;
   const note = usingAi ? ai.playstyle : tpl?.note;
@@ -331,7 +333,7 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
           </View>
 
           {!champ._new && (
-            <TouchableOpacity style={styles.aiBtn} onPress={runAi} disabled={aiLoading} activeOpacity={0.85}>
+            <TouchableOpacity style={styles.aiBtn} onPress={() => runAi(usingAi)} disabled={aiLoading} activeOpacity={0.85}>
               {aiLoading ? (
                 <>
                   <ActivityIndicator color={C.cyan} size="small" />

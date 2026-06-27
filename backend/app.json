@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "a72a1e37-2424-490e-8179-bff1f64219fa"
+      }
+    },
+    "android": {
+      "package": "com.donglb.tocchiencounterbackend"
+    }
+  }
+}

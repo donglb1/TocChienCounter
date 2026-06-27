@@ -229,7 +229,10 @@ CÁCH CHỌN:
 - Build cân bằng: đủ sát thương + 1 món sống sót hợp tướng. Đúng 1 đôi giày.
 - Ngọc + 2 phép bổ trợ chuẩn nhất cho tướng.
 
-CHỈ chọn TRANG BỊ trong CATALOG (trả tên tiếng Anh CHÍNH XÁC như trong catalog):
+CHỈ chọn TRANG BỊ trong CATALOG dưới đây (trả tên tiếng Anh CHÍNH XÁC như trong catalog).
+⚠ TUYỆT ĐỐI KHÔNG dùng tên item không xuất hiện trong danh sách này, dù nó quen thuộc ở LMHT PC
+(vd Kraken Slayer/Galeforce/Stormrazor... CHỈ dùng nếu chúng thực sự có trong danh sách). Lưu ý: nhiều
+"item" bên PC ở Tốc Chiến là NGỌC (vd Kraken Slayer) — không đưa vào trang bị.
 ${itemList}
 
 CHỈ chọn NGỌC trong danh sách (trả tên tiếng Anh chính xác):

@@ -183,13 +183,11 @@ export function findItemBySlug(slug, curatedOnly = false) {
 }
 
 // Tra item theo tên (Anh hoặc Việt). DB tĩnh trước → catalog live (item mới) → null.
-// Chỉ null khi item KHÔNG có ở cả hai nguồn → UI mới bật ⚠ NGOÀI DS.
-export function findItem(query) {
+// curatedOnly=true → CHỈ DB tĩnh (chặn item live PC/AI bịa); dùng để lọc build hiển thị.
+export function findItem(query, curatedOnly = false) {
   const q = nameKey(query);
   if (!q) return null;
-  return (
-    ITEMS.find((i) => nameKey(i.name) === q || nameKey(i.vi) === q) ||
-    liveToItem(getLiveItemByName(query)) ||
-    null
-  );
+  const curated = ITEMS.find((i) => nameKey(i.name) === q || nameKey(i.vi) === q) || null;
+  if (curated || curatedOnly) return curated;
+  return liveToItem(getLiveItemByName(query));
 }
