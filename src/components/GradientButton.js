@@ -31,9 +31,11 @@ export default function GradientButton({ title, onPress, disabled, loading, load
   );
 }
 
+const _glow = glow(C.cyan, 14, 0.45);
+const { elevation: _elev, ...wrapShadow } = _glow;
 const styles = StyleSheet.create({
-  wrap: { borderRadius: 14, ...glow(C.cyan, 14, 0.45) },
-  grad: { borderRadius: 14, paddingVertical: 15, alignItems: "center", justifyContent: "center" },
+  wrap: { borderRadius: 14, ...wrapShadow },
+  grad: { borderRadius: 14, paddingVertical: 15, alignItems: "center", justifyContent: "center", elevation: _elev },
   row: { flexDirection: "row", alignItems: "center", gap: 8 },
   text: { color: "#04101a", fontWeight: "900", fontSize: 15, letterSpacing: 1 },
 });
