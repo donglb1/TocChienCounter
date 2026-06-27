@@ -186,3 +186,67 @@ export function itemIcon(item) {
   if (id) return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/item/${id}.png`;
   return null;
 }
+
+// ─── ICON NGỌC (perk DDragon, đường dẫn KHÔNG cần version) ───
+// Ngọc chính (key = tên Anh) + ngọc phụ (key = tên Việt). Ngọc riêng WR không có icon → null (UI vẽ huy hiệu nhánh).
+const PERK_BASE = "https://ddragon.leagueoflegends.com/cdn/img/";
+const RUNE_ICON = {
+  // Ngọc chính (theo tên Anh)
+  "Electrocute": "perk-images/Styles/Domination/Electrocute/Electrocute.png",
+  "Dark Harvest": "perk-images/Styles/Domination/DarkHarvest/DarkHarvest.png",
+  "Press the Attack": "perk-images/Styles/Precision/PressTheAttack/PressTheAttack.png",
+  "Lethal Tempo": "perk-images/Styles/Precision/LethalTempo/LethalTempoTemp.png",
+  "Fleet Footwork": "perk-images/Styles/Precision/FleetFootwork/FleetFootwork.png",
+  "Conqueror": "perk-images/Styles/Precision/Conqueror/Conqueror.png",
+  "Grasp of the Undying": "perk-images/Styles/Resolve/GraspOfTheUndying/GraspOfTheUndying.png",
+  "Guardian": "perk-images/Styles/Resolve/Guardian/Guardian.png",
+  "Summon Aery": "perk-images/Styles/Sorcery/SummonAery/SummonAery.png",
+  "Arcane Comet": "perk-images/Styles/Sorcery/ArcaneComet/ArcaneComet.png",
+  "First Strike": "perk-images/Styles/Inspiration/FirstStrike/FirstStrike.png",
+  "Phase Rush": "perk-images/Styles/Sorcery/PhaseRush/PhaseRush.png",
+  "Glacial Augment": "perk-images/Styles/Inspiration/GlacialAugment/GlacialAugment.png",
+  // Ngọc phụ (theo tên Việt) — chỉ map món trùng rune PC
+  "Phát Bắn Đơn Giản": "perk-images/Styles/Domination/CheapShot/CheapShot.png",
+  "Tác Động Bất Chợt": "perk-images/Styles/Domination/SuddenImpact/SuddenImpact.png",
+  "Thu Thập Nhãn Cầu": "perk-images/Styles/Domination/EyeballCollection/EyeballCollection.png",
+  "Thợ Săn Tài Tình": "perk-images/Styles/Domination/TreasureHunter/TreasureHunter.png",
+  "Thợ Săn Tàn Nhẫn": "perk-images/Styles/Domination/RelentlessHunter/RelentlessHunter.png",
+  "Mắt Thây Ma": "perk-images/Styles/Domination/GhostPoro/GhostPoro.png",
+  "Chốt Chặn Cuối Cùng": "perk-images/Styles/Sorcery/LastStand/LastStand.png",
+  "Đốn Hạ": "perk-images/Styles/Precision/CutDown/CutDown.png",
+  "Nhát Chém Ân Huệ": "perk-images/Styles/Precision/CoupDeGrace/CoupDeGrace.png",
+  "Huyền Thoại: Tốc Độ Đánh": "perk-images/Styles/Precision/LegendAlacrity/LegendAlacrity.png",
+  "Huyền Thoại: Hút Máu": "perk-images/Styles/Precision/LegendBloodline/LegendBloodline.png",
+  "Đắc Thắng": "perk-images/Styles/Precision/Triumph.png",
+  "Cuồng Phong Tích Tụ": "perk-images/Styles/Sorcery/GatheringStorm/GatheringStorm.png",
+  "Dải Băng Năng Lượng": "perk-images/Styles/Sorcery/ManaflowBand/ManaflowBand.png",
+  "Áo Choàng Mây": "perk-images/Styles/Sorcery/NimbusCloak/6361.png",
+  "Thiêu Rụi": "perk-images/Styles/Sorcery/Scorch/Scorch.png",
+  "Ngọn Gió Thứ Hai": "perk-images/Styles/Resolve/SecondWind/SecondWind.png",
+  "Giáp Cốt": "perk-images/Styles/Resolve/BonePlating/BonePlating.png",
+  "Vững Vàng": "perk-images/Styles/Resolve/Conditioning/Conditioning.png",
+  "Lan Tràn": "perk-images/Styles/Resolve/Overgrowth/Overgrowth.png",
+  "Tiếp Súc": "perk-images/Styles/Resolve/Revitalize/Revitalize.png",
+  "Suối Nguồn Sinh Mệnh": "perk-images/Styles/Resolve/FontOfLife/FontOfLife.png",
+  "Tàn Phá Hủy Diệt": "perk-images/Styles/Resolve/Demolish/Demolish.png",
+  "Tập Trung Tuyệt Đối": "perk-images/Styles/Sorcery/AbsoluteFocus/AbsoluteFocus.png",
+  "Thăng Tiến Sức Mạnh": "perk-images/Styles/Sorcery/Transcendence/Transcendence.png",
+  "Tốc Biến Ma Thuật": "perk-images/Styles/Inspiration/HextechFlashtraption/HextechFlashtraption.png",
+};
+// Icon 1 ngọc (chính/phụ). rune = object có name (Anh) hoặc vi. Không map được → null.
+export function runeIcon(rune) {
+  if (!rune) return null;
+  const path = RUNE_ICON[rune.name] || RUNE_ICON[rune.vi];
+  return path ? PERK_BASE + path : null;
+}
+
+// ─── ICON PHÉP BỔ TRỢ (summoner spell DDragon — giống Tốc Chiến) ───
+const SPELL_DDRAGON = {
+  Flash: "SummonerFlash", Ignite: "SummonerDot", Exhaust: "SummonerExhaust",
+  Heal: "SummonerHeal", Barrier: "SummonerBarrier", Ghost: "SummonerHaste", Smite: "SummonerSmite",
+};
+export function spellIcon(spell) {
+  if (!spell) return null;
+  const id = SPELL_DDRAGON[spell.name];
+  return id ? `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/spell/${id}.png` : null;
+}

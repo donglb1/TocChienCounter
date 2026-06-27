@@ -11,9 +11,10 @@ import { getChampionBuild } from "../data/buildTemplates";
 import { findItem } from "../data/items";
 import { findKeystone, findSpell } from "../data/runes";
 import { Ionicons } from "@expo/vector-icons";
-import { championIcon, itemIcon, ddragonIdByName } from "../lib/images";
+import { championIcon, itemIcon, ddragonIdByName, runeIcon, spellIcon } from "../lib/images";
 import { useLiveData } from "../lib/liveData";
 import ItemDetailModal from "../components/ItemDetailModal";
+import RuneDetailModal from "../components/RuneDetailModal";
 import { getFavorites, toggleFavorite } from "../lib/storage";
 import { fetchTierList, aiChampionBuild, getCachedAiBuild } from "../lib/api";
 
@@ -243,6 +244,7 @@ export default function ChampScreen() {
 function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
   useLiveData(); // re-render khi catalog item về (icon/tên item trong build)
   const [detailItem, setDetailItem] = useState(null);
+  const [detailRune, setDetailRune] = useState(null);
   const tpl = getChampionBuild(champ); // build mẫu offline (theo archetype)
   const [ai, setAi] = useState(null); // build AI đề xuất (chỉ chọn trong catalog curated)
   const [aiLoading, setAiLoading] = useState(false);
@@ -370,17 +372,11 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
             <>
               <Text style={styles.section}>NGỌC & PHÉP</Text>
               {keystone ? (
-                <View style={styles.rsRow}>
-                  <Text style={styles.rsBadge}>NGỌC</Text>
-                  <Text style={styles.rsName}>{keystoneName(keystone)}</Text>
-                </View>
+                <RuneRow rune={findKeystone(keystone) || { name: keystone }} kind="keystone" badge="NGỌC" onOpen={setDetailRune} />
               ) : null}
-              {spells && spells.length ? (
-                <View style={styles.rsRow}>
-                  <Text style={[styles.rsBadge, styles.rsBadgeSpell]}>PHÉP</Text>
-                  <Text style={styles.rsName}>{spells.map(spellName).join(" + ")}</Text>
-                </View>
-              ) : null}
+              {(spells || []).map((s, i) => (
+                <RuneRow key={`sp${i}`} rune={findSpell(s) || { name: s }} kind="spell" badge="PHÉP" badgeStyle={styles.rsBadgeSpell} onOpen={setDetailRune} />
+              ))}
 
               {note ? (
                 <View style={styles.noteCard}>
@@ -394,6 +390,7 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
       )}
 
       <ItemDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
+      <RuneDetailModal data={detailRune} onClose={() => setDetailRune(null)} />
       </ScrollView>
     </View>
   );
@@ -426,13 +423,23 @@ function ItemRow({ name, order, onPress }) {
   );
 }
 
-function keystoneName(n) {
-  const k = findKeystone(n);
-  return k ? k.vi : n;
-}
-function spellName(n) {
-  const s = findSpell(n);
-  return s ? s.vi : n;
+// 1 dòng ngọc/phép có icon, chạm mở chi tiết tác dụng.
+function RuneRow({ rune, kind, badge, badgeStyle, onOpen }) {
+  const icon = kind === "spell" ? spellIcon(rune) : runeIcon(rune);
+  return (
+    <TouchableOpacity style={styles.rsRow} activeOpacity={0.7} onPress={() => onOpen({ ...rune, kind, icon })}>
+      {icon ? (
+        <Image source={{ uri: icon }} style={styles.rsIcon} />
+      ) : (
+        <View style={[styles.rsIcon, styles.rsIconFallback]}>
+          <Text style={styles.rsIconText}>{(rune.vi || rune.name || "?").slice(0, 2)}</Text>
+        </View>
+      )}
+      <Text style={[styles.rsBadge, badgeStyle]}>{badge}</Text>
+      <Text style={styles.rsName} numberOfLines={1}>{rune.vi || rune.name}</Text>
+      <Ionicons name="information-circle-outline" size={15} color={C.textFaint} />
+    </TouchableOpacity>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -511,10 +518,13 @@ const styles = StyleSheet.create({
   itemIconFallback: { alignItems: "center", justifyContent: "center" },
   itemIconText: { color: C.textDim, fontWeight: "800", fontSize: 12 },
   itemName: { color: C.text, fontSize: 14, fontWeight: "600", flex: 1 },
-  rsRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 7 },
+  rsRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
+  rsIcon: { width: 28, height: 28, borderRadius: 7, backgroundColor: C.cardAlt },
+  rsIconFallback: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.border },
+  rsIconText: { color: C.textDim, fontWeight: "800", fontSize: 11 },
   rsBadge: { color: C.amber, borderColor: C.amberDim, borderWidth: 1, borderRadius: 5, fontSize: 10, fontWeight: "800", paddingHorizontal: 6, paddingVertical: 2 },
   rsBadgeSpell: { color: C.cyan, borderColor: C.cyanDim },
-  rsName: { color: C.text, fontSize: 14, fontWeight: "700" },
+  rsName: { color: C.text, fontSize: 14, fontWeight: "700", flexShrink: 1 },
   noteCard: { backgroundColor: C.cardAlt, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 13, marginTop: 18 },
   noteLabel: { color: C.textDim, fontSize: 11, fontWeight: "800", letterSpacing: 1, marginBottom: 6 },
   noteText: { color: C.text, fontSize: 13, lineHeight: 20 },

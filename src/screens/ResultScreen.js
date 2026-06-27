@@ -5,7 +5,7 @@ import { C } from "../theme";
 import { Ionicons } from "@expo/vector-icons";
 import { findItem } from "../data/items";
 import { findKeystone, findSpell, findRune } from "../data/runes";
-import { itemIcon } from "../lib/images";
+import { itemIcon, runeIcon, spellIcon } from "../lib/images";
 import { useLiveData } from "../lib/liveData";
 import ItemDetailModal from "../components/ItemDetailModal";
 import RuneDetailModal from "../components/RuneDetailModal";
@@ -53,6 +53,26 @@ function ItemGem({ name, onPress }) {
           <Text style={styles.outBadge}>NGOÀI DS</Text>
         </View>
       )}
+    </TouchableOpacity>
+  );
+}
+
+// 1 dòng ngọc/phép: icon + nhãn + tên + lý do, chạm mở chi tiết.
+function RuneRow({ rune, kind, badge, badgeStyle, reason, onOpen }) {
+  const icon = kind === "spell" ? spellIcon(rune) : runeIcon(rune);
+  return (
+    <TouchableOpacity style={styles.rsRow} activeOpacity={0.7} onPress={() => onOpen({ ...rune, kind, icon })}>
+      {icon ? (
+        <Image source={{ uri: icon }} style={styles.rsIcon} />
+      ) : (
+        <View style={[styles.rsIcon, styles.rsIconFallback]}>
+          <Text style={styles.rsIconText}>{(rune.vi || rune.name || "?").slice(0, 2)}</Text>
+        </View>
+      )}
+      <Text style={[styles.rsBadge, badgeStyle]}>{badge}</Text>
+      <Text style={styles.rsName} numberOfLines={1}>{rune.vi || rune.name}</Text>
+      {reason ? <Text style={styles.rsReason} numberOfLines={1}>· {reason}</Text> : null}
+      <Ionicons name="information-circle-outline" size={15} color={C.textFaint} />
     </TouchableOpacity>
   );
 }
@@ -134,42 +154,13 @@ export default function ResultScreen({
         <View style={styles.swCard}>
           <Text style={styles.cardTitle}>NGỌC & PHÉP BỔ TRỢ</Text>
           {b.keystone?.name ? (
-            <TouchableOpacity
-              style={styles.rsRow}
-              activeOpacity={0.7}
-              onPress={() => setDetailRune({ ...(findKeystone(b.keystone.name) || { name: b.keystone.name }), kind: "keystone" })}
-            >
-              <Text style={styles.rsBadge}>NGỌC</Text>
-              <Text style={styles.rsName}>{keystoneName(b.keystone.name)}</Text>
-              {b.keystone.reason ? <Text style={styles.rsReason}>· {b.keystone.reason}</Text> : null}
-              <Ionicons name="information-circle-outline" size={15} color={C.textFaint} />
-            </TouchableOpacity>
+            <RuneRow rune={findKeystone(b.keystone.name) || { name: b.keystone.name }} kind="keystone" badge="NGỌC" reason={b.keystone.reason} onOpen={setDetailRune} />
           ) : null}
           {(b.minorRunes || []).filter((r) => r && r.name).map((r, i) => (
-            <TouchableOpacity
-              key={`m${i}`}
-              style={styles.rsRow}
-              activeOpacity={0.7}
-              onPress={() => setDetailRune({ ...(findRune(r.name) || { name: r.name }), kind: "minor" })}
-            >
-              <Text style={[styles.rsBadge, styles.rsBadgeMinor]}>NGỌC PHỤ</Text>
-              <Text style={styles.rsName}>{(findRune(r.name) || {}).vi || r.name}</Text>
-              {r.reason ? <Text style={styles.rsReason}>· {r.reason}</Text> : null}
-              <Ionicons name="information-circle-outline" size={15} color={C.textFaint} />
-            </TouchableOpacity>
+            <RuneRow key={`m${i}`} rune={findRune(r.name) || { name: r.name }} kind="minor" badge="NGỌC PHỤ" badgeStyle={styles.rsBadgeMinor} reason={r.reason} onOpen={setDetailRune} />
           ))}
           {(b.spells || []).filter((s) => s && s.name).map((s, i) => (
-            <TouchableOpacity
-              key={i}
-              style={styles.rsRow}
-              activeOpacity={0.7}
-              onPress={() => setDetailRune({ ...(findSpell(s.name) || { name: s.name }), kind: "spell" })}
-            >
-              <Text style={[styles.rsBadge, styles.rsBadgeSpell]}>PHÉP</Text>
-              <Text style={styles.rsName}>{spellName(s.name)}</Text>
-              {s.reason ? <Text style={styles.rsReason}>· {s.reason}</Text> : null}
-              <Ionicons name="information-circle-outline" size={15} color={C.textFaint} />
-            </TouchableOpacity>
+            <RuneRow key={i} rune={findSpell(s.name) || { name: s.name }} kind="spell" badge="PHÉP" badgeStyle={styles.rsBadgeSpell} reason={s.reason} onOpen={setDetailRune} />
           ))}
         </View>
       )}
@@ -225,14 +216,6 @@ function altName(name) {
   const it = findItem(name);
   return it ? it.vi : name;
 }
-function keystoneName(name) {
-  const k = findKeystone(name);
-  return k ? k.vi : name;
-}
-function spellName(name) {
-  const s = findSpell(name);
-  return s ? s.vi : name;
-}
 function Meta({ label, value, warn }) {
   return (
     <View style={styles.meta}>
@@ -275,11 +258,14 @@ const styles = StyleSheet.create({
   swPlus: { color: C.green, fontSize: 15, fontWeight: "900", width: 16 },
   swMinus: { color: C.warn, fontSize: 15, fontWeight: "900", width: 16 },
   swText: { color: C.text, fontSize: 13, lineHeight: 19, flex: 1 },
-  rsRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 7, marginTop: 7 },
+  rsRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 8 },
+  rsIcon: { width: 28, height: 28, borderRadius: 7, backgroundColor: C.cardAlt },
+  rsIconFallback: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.border },
+  rsIconText: { color: C.textDim, fontWeight: "800", fontSize: 11 },
   rsBadge: { color: C.amber, borderColor: C.amberDim, borderWidth: 1, borderRadius: 5, fontSize: 10, fontWeight: "800", paddingHorizontal: 6, paddingVertical: 2 },
   rsBadgeSpell: { color: C.cyan, borderColor: C.cyanDim },
   rsBadgeMinor: { color: C.violet, borderColor: C.violetDim },
-  rsName: { color: C.text, fontSize: 14, fontWeight: "700" },
+  rsName: { color: C.text, fontSize: 14, fontWeight: "700", flexShrink: 1 },
   rsReason: { color: C.textDim, fontSize: 12, flexShrink: 1 },
   section: { color: C.amber, fontSize: 13, fontWeight: "800", letterSpacing: 1, marginTop: 22, marginBottom: 12 },
   step: { backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 12, marginBottom: 10 },

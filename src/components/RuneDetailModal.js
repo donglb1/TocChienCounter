@@ -2,7 +2,7 @@
 // Bảng chi tiết 1 NGỌC / PHÉP bổ trợ: tên Việt/Anh + loại + mô tả tác dụng (từ DB runes).
 // Chạm 1 ngọc/phép ở màn kết quả → mở bảng này (giống ItemDetailModal cho trang bị). data=null → ẩn.
 import React from "react";
-import { Modal, View, Text, TouchableOpacity, StyleSheet, Pressable } from "react-native";
+import { Modal, View, Text, Image, TouchableOpacity, StyleSheet, Pressable } from "react-native";
 import { C } from "../theme";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -16,6 +16,7 @@ export default function RuneDetailModal({ data, onClose }) {
           {data && (
             <>
               <View style={styles.head}>
+                {data.icon ? <Image source={{ uri: data.icon }} style={styles.icon} /> : null}
                 <View style={{ flex: 1 }}>
                   <Text style={styles.name}>{data.vi || data.name}</Text>
                   {data.vi && data.vi !== data.name ? <Text style={styles.enName}>{data.name}</Text> : null}
@@ -44,6 +45,7 @@ const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", alignItems: "center", justifyContent: "center", padding: 28 },
   card: { width: "100%", backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 18 },
   head: { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 12 },
+  icon: { width: 44, height: 44, borderRadius: 10, backgroundColor: C.cardAlt },
   name: { color: C.text, fontSize: 17, fontWeight: "900" },
   enName: { color: C.textFaint, fontSize: 12, marginTop: 1 },
   kind: { color: C.amber, fontSize: 11, fontWeight: "800", letterSpacing: 0.5, marginTop: 3 },
