@@ -360,9 +360,7 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
           {situational.length > 0 && (
             <>
               <Text style={styles.subLabel}>TÙY TÌNH HUỐNG</Text>
-              <View style={styles.sitWrap}>
-                {situational.map((it, i) => <ItemChip key={`s${i}`} name={it} onPress={setDetailItem} />)}
-              </View>
+              {situational.map((it, i) => <ItemRow key={`s${i}`} name={it} onPress={setDetailItem} />)}
             </>
           )}
 
@@ -422,15 +420,6 @@ function ItemRow({ name, order, onPress }) {
         </View>
       )}
       <Text style={styles.itemName}>{vi}</Text>
-    </TouchableOpacity>
-  );
-}
-
-function ItemChip({ name, onPress }) {
-  const item = findItem(name);
-  return (
-    <TouchableOpacity activeOpacity={item ? 0.7 : 1} onPress={() => item && onPress?.(item)}>
-      <Text style={styles.sitChip}>{item ? item.vi : name}</Text>
     </TouchableOpacity>
   );
 }
@@ -520,11 +509,6 @@ const styles = StyleSheet.create({
   itemIconFallback: { alignItems: "center", justifyContent: "center" },
   itemIconText: { color: C.textDim, fontWeight: "800", fontSize: 12 },
   itemName: { color: C.text, fontSize: 14, fontWeight: "600", flex: 1 },
-  sitWrap: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
-  sitChip: {
-    color: C.textDim, fontSize: 13, backgroundColor: C.cardAlt, borderWidth: 1, borderColor: C.border,
-    borderRadius: 14, paddingHorizontal: 11, paddingVertical: 6,
-  },
   rsRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 7 },
   rsBadge: { color: C.amber, borderColor: C.amberDim, borderWidth: 1, borderRadius: 5, fontSize: 10, fontWeight: "800", paddingHorizontal: 6, paddingVertical: 2 },
   rsBadgeSpell: { color: C.cyan, borderColor: C.cyanDim },
