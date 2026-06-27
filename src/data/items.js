@@ -60,8 +60,6 @@ export const ITEMS = [
   { id: "ie", name: "Infinity Edge", vi: "Vô Cực Kiếm", type: "offense", tags: ["critDamage"], desc: "Tăng mạnh sát thương chí mạng. Món lõi cho xạ thủ đi chí mạng.", img: null },
   { id: "botrk", name: "Blade of the Ruined King", vi: "Gươm Suy Vong", type: "offense", tags: ["onHit", "lifesteal", "slow"], desc: "Đòn đánh gây sát thương theo % máu hiện tại + hút máu + làm chậm. Khắc tướng máu trâu/đỡ đòn.", img: null },
   { id: "magneticblaster", name: "Magnetic Blaster", vi: "Súng Từ Trường", type: "offense", tags: ["onHit"], desc: "Tốc đánh + on-hit gây sát thương lan/tầm xa. Cho xạ thủ on-hit.", img: null },
-  // Stormrazor = "Phong Thần Kiếm" (DDragon VN id 3095). img pin để khớp tên, đè ảnh scrape 2021 sai.
-  { id: "stormrazor", name: "Stormrazor", vi: "Phong Thần Kiếm", type: "offense", tags: ["critDamage"], desc: "Đòn đầu sau khi chờ gây thêm sát thương + tăng tốc chạy. Cho sát thủ AD/đi kèo.", img: "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3095.png" },
   // Wit's End = "Đao Tím" (DDragon VN id 3091). img pin để khớp đúng tên + ảnh.
   { id: "witsend", name: "Wit's End", vi: "Đao Tím", type: "offense", tags: ["onHit", "mr"], desc: "Tốc đánh + kháng phép; đòn đánh gây thêm sát thương phép on-hit. Cho on-hit cần chống AP.", img: "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/item/3091.png" },
   { id: "phantomdancer", name: "Phantom Dancer", vi: "Ma Vũ Song Kiếm", type: "offense", tags: ["critDamage"], desc: "Chí mạng + tốc đánh + tốc chạy; khiên khi máu thấp. Tăng sống sót cho xạ thủ.", img: null },
