@@ -45,7 +45,8 @@ export default async function handler(req, res) {
     if (mode === "extract") payload = buildExtract(body);
     else if (mode === "analyze") payload = buildAnalyze(body);
     else if (mode === "suggest") payload = buildSuggest(body);
-    else return res.status(400).json({ error: "mode phải là 'extract' | 'analyze' | 'suggest'" });
+    else if (mode === "champbuild") payload = buildChampBuild(body);
+    else return res.status(400).json({ error: "mode phải là 'extract' | 'analyze' | 'suggest' | 'champbuild'" });
 
     // Tự hủy trước khi Vercel giết function (giới hạn 60s) → trả lỗi JSON đọc được
     const controller = new AbortController();
@@ -199,6 +200,54 @@ CHỈ trả JSON thuần (không markdown, không \`\`\`):
   return {
     model: ANALYZE_MODEL,
     max_tokens: 1400,
+    ...ANALYZE_CFG,
+    messages: [{ role: "user", content: prompt }],
+  };
+}
+
+// ───────────────────────── CHAMPBUILD (build chuẩn 1 tướng, không có đối thủ) ─────────────────────────
+// Thay nguồn cào (lolwildriftbuild lẫn item PC) bằng AI đề xuất build TIÊU CHUẨN cho 1 tướng,
+// CHỈ chọn trong catalog Tốc Chiến curated → không lòi item LMHT PC.
+function buildChampBuild({ champ, lane, champMeta, items, runes, spells }) {
+  const itemList = (items || [])
+    .map((i) => `- ${i.name} (${i.vi}) [${i.type}]: ${i.desc}`)
+    .join("\n");
+  const runeList = (runes || []).map((r) => `- ${r.name} (${r.vi}): ${r.for}`).join("\n");
+  const spellList = (spells || []).map((s) => `- ${s.name} (${s.vi}): ${s.for}`).join("\n");
+  const me = champMeta ? fmtChamp(champMeta).replace(/^- /, "") : champ;
+
+  const prompt = `Bạn là HLV Tốc Chiến (Wild Rift) chuyên nghiệp. Đề xuất BỘ TRANG BỊ TIÊU CHUẨN, tối ưu nhất
+cho tướng dưới đây theo lối lên đồ đặc trưng + meta hiện tại (KHÔNG có đối thủ cụ thể, build phổ quát mạnh nhất).
+
+⚠ ĐÂY LÀ LIÊN MINH: TỐC CHIẾN (Wild Rift) — KHÔNG phải LMHT PC. Tên item/chỉ số khác bản PC. TUYỆT ĐỐI
+chỉ dùng item/ngọc/phép trong CATALOG bên dưới, KHÔNG lấy theo trí nhớ LMHT PC.
+
+TƯỚNG${lane ? ` (${lane})` : ""}: ${me}
+
+CÁCH CHỌN:
+- Bám "cách lên đồ đặc trưng" của tướng (vd AD chí mạng -> Vô Cực Kiếm + chí mạng; AP burst -> Mũ Rabadon/Vọng Âm Luden; đấu sĩ -> Tam Hợp/Rìu Đen; đỡ đòn -> đồ trâu).
+- Build cân bằng: đủ sát thương + 1 món sống sót hợp tướng. Đúng 1 đôi giày.
+- Ngọc + 2 phép bổ trợ chuẩn nhất cho tướng.
+
+CHỈ chọn TRANG BỊ trong CATALOG (trả tên tiếng Anh CHÍNH XÁC như trong catalog):
+${itemList}
+
+CHỈ chọn NGỌC trong danh sách (trả tên tiếng Anh chính xác):
+${runeList}
+
+CHỈ chọn PHÉP trong danh sách (trả tên tiếng Anh chính xác):
+${spellList}
+
+YÊU CẦU OUTPUT — NGẮN GỌN:
+- "boots": 1 đôi giày. "core": 3 món cốt lõi (thứ tự lên). "situational": 2-3 món tùy tình huống.
+- "keystone": 1 ngọc; "spells": ĐÚNG 2 phép. "reason" ≤8 từ. "playstyle" ≤20 từ.
+
+CHỈ trả JSON thuần (không markdown, không \`\`\`):
+{"boots":"","core":["",""],"situational":["",""],"keystone":{"name":"","reason":""},"spells":[{"name":"","reason":""}],"playstyle":""}`;
+
+  return {
+    model: ANALYZE_MODEL,
+    max_tokens: 900,
     ...ANALYZE_CFG,
     messages: [{ role: "user", content: prompt }],
   };

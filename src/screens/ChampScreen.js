@@ -3,19 +3,19 @@
 // Không cần ảnh, không tốn API — dùng build-identity + template có sẵn.
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image, ScrollView,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image, ScrollView, ActivityIndicator,
 } from "react-native";
 import { C, glow, noDiacritics, slugify } from "../theme";
 import { CHAMPIONS, BUILD_LABELS, findChampion, findChampionBySlug } from "../data/champions";
 import { getChampionBuild } from "../data/buildTemplates";
-import { findItem, findItemBySlug } from "../data/items";
+import { findItem } from "../data/items";
 import { findKeystone, findSpell } from "../data/runes";
 import { Ionicons } from "@expo/vector-icons";
 import { championIcon, itemIcon, ddragonIdByName } from "../lib/images";
 import { useLiveData } from "../lib/liveData";
 import ItemDetailModal from "../components/ItemDetailModal";
 import { getFavorites, toggleFavorite } from "../lib/storage";
-import { fetchTierList, fetchChampBuild } from "../lib/api";
+import { fetchTierList, aiChampionBuild, getCachedAiBuild } from "../lib/api";
 
 // slug site cho 1 tướng (ưu tiên slug thật từ tier list; fallback suy từ tên)
 function champToSlug(champ) {
@@ -244,34 +244,41 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
   useLiveData(); // re-render khi catalog item về (icon/tên item trong build)
   const [detailItem, setDetailItem] = useState(null);
   const tpl = getChampionBuild(champ); // build mẫu offline (theo archetype)
-  const [live, setLive] = useState(null); // build thật cào theo patch
+  const [ai, setAi] = useState(null); // build AI đề xuất (chỉ chọn trong catalog curated)
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
   const dmgColor = champ.damageType === "AP" ? C.ap : champ.damageType === "AD" ? C.ad : C.textDim;
 
+  // Mở tướng: hiện build mẫu offline NGAY; nếu trước đó đã tạo build AI thì lấy cache hiện luôn (không gọi mạng).
   useEffect(() => {
     let alive = true;
-    if (slug) {
-      fetchChampBuild(slug)
-        .then((d) => { if (alive && d && d.ok) setLive(d); })
-        .catch(() => {});
-    }
+    setAi(null); setAiError("");
+    getCachedAiBuild(champ.name).then((b) => { if (alive && b) setAi(b); }).catch(() => {});
     return () => { alive = false; };
-  }, [slug]);
+  }, [champ.name]);
 
-  // Build live LỌC theo DB Tốc Chiến: nguồn cào lẫn item LMHT-PC → chỉ giữ món có trong items.js.
-  const mapSlugs = (arr) => (arr || [])
-    .map((s) => findItemBySlug(s, true)) // curatedOnly → bỏ item PC/lạ
-    .filter(Boolean)
-    .map((it) => it.name);
-  const liveBoots = mapSlugs(live && live.boots);
-  const liveCore = mapSlugs(live && live.core);
-  const liveSituational = mapSlugs(live && live.situational);
-  // Chỉ dùng build live khi còn ĐỦ món WR thật sau lọc (>=3 cốt lõi); nếu không → build mẫu offline.
-  const usingLive = liveCore.length >= 3;
-  const boots = usingLive ? liveBoots : tpl ? [tpl.boots] : [];
-  const core = usingLive ? liveCore : tpl ? tpl.core : [];
-  const situational = usingLive ? liveSituational : tpl ? tpl.situational : [];
+  const runAi = async () => {
+    setAiLoading(true); setAiError("");
+    try {
+      const b = await aiChampionBuild(champ.name);
+      setAi(b);
+    } catch (e) {
+      setAiError(String(e.message || e));
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Nguồn build: AI (nếu có) → build mẫu offline. KHÔNG còn cào lolwildriftbuild (lẫn item PC).
+  const usingAi = !!ai;
+  const boots = usingAi ? (ai.boots ? [ai.boots] : []) : tpl ? [tpl.boots] : [];
+  const core = usingAi ? (ai.core || []) : tpl ? tpl.core : [];
+  const situational = usingAi ? (ai.situational || []) : tpl ? tpl.situational : [];
+  const keystone = usingAi ? ai.keystone?.name : tpl?.keystone;
+  const spells = usingAi ? (ai.spells || []).map((s) => s.name) : tpl?.spells;
+  const note = usingAi ? ai.playstyle : tpl?.note;
   const hasBuild = core.length > 0 || boots.length > 0;
-  const sourceLabel = usingLive ? "Cập nhật theo patch hiện tại" : tpl ? "Build mẫu (offline)" : null;
+  const sourceLabel = usingAi ? "AI đề xuất (tối ưu)" : tpl ? "Build mẫu (offline)" : null;
 
   return (
     <View style={styles.wrap}>
@@ -320,8 +327,25 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
         <>
           <View style={styles.sectionRow}>
             <Text style={styles.section}>BỘ TRANG BỊ</Text>
-            {sourceLabel ? <Text style={styles.sourceTag}>{sourceLabel}</Text> : null}
+            {sourceLabel ? <Text style={[styles.sourceTag, usingAi && styles.sourceTagAi]}>{sourceLabel}</Text> : null}
           </View>
+
+          {!champ._new && (
+            <TouchableOpacity style={styles.aiBtn} onPress={runAi} disabled={aiLoading} activeOpacity={0.85}>
+              {aiLoading ? (
+                <>
+                  <ActivityIndicator color={C.cyan} size="small" />
+                  <Text style={styles.aiBtnText}>AI đang phân tích build…</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="sparkles" size={15} color={C.cyan} />
+                  <Text style={styles.aiBtnText}>{usingAi ? "Phân tích lại bằng AI" : "AI đề xuất build tối ưu"}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+          {aiError ? <Text style={styles.aiError}>{aiError}</Text> : null}
 
           {boots.length > 0 && (
             <>
@@ -342,22 +366,28 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
             </>
           )}
 
-          {tpl && (
+          {(keystone || (spells && spells.length)) && (
             <>
               <Text style={styles.section}>NGỌC & PHÉP</Text>
-              <View style={styles.rsRow}>
-                <Text style={styles.rsBadge}>NGỌC</Text>
-                <Text style={styles.rsName}>{keystoneName(tpl.keystone)}</Text>
-              </View>
-              <View style={styles.rsRow}>
-                <Text style={[styles.rsBadge, styles.rsBadgeSpell]}>PHÉP</Text>
-                <Text style={styles.rsName}>{tpl.spells.map(spellName).join(" + ")}</Text>
-              </View>
+              {keystone ? (
+                <View style={styles.rsRow}>
+                  <Text style={styles.rsBadge}>NGỌC</Text>
+                  <Text style={styles.rsName}>{keystoneName(keystone)}</Text>
+                </View>
+              ) : null}
+              {spells && spells.length ? (
+                <View style={styles.rsRow}>
+                  <Text style={[styles.rsBadge, styles.rsBadgeSpell]}>PHÉP</Text>
+                  <Text style={styles.rsName}>{spells.map(spellName).join(" + ")}</Text>
+                </View>
+              ) : null}
 
-              <View style={styles.noteCard}>
-                <Text style={styles.noteLabel}>LỐI CHƠI</Text>
-                <Text style={styles.noteText}>{tpl.note}</Text>
-              </View>
+              {note ? (
+                <View style={styles.noteCard}>
+                  <Text style={styles.noteLabel}>LỐI CHƠI</Text>
+                  <Text style={styles.noteText}>{note}</Text>
+                </View>
+              ) : null}
             </>
           )}
         </>
@@ -470,6 +500,14 @@ const styles = StyleSheet.create({
   section: { color: C.text, fontSize: 14, fontWeight: "900", letterSpacing: 1, marginTop: 22, marginBottom: 8 },
   sectionRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 22, marginBottom: 8 },
   sourceTag: { color: C.green, fontSize: 10, fontWeight: "700" },
+  sourceTagAi: { color: C.cyan },
+  aiBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7,
+    marginBottom: 12, borderRadius: 12, paddingVertical: 11,
+    borderWidth: 1.5, borderColor: C.cyan, backgroundColor: C.cyanDim,
+  },
+  aiBtnText: { color: C.text, fontWeight: "800", fontSize: 13 },
+  aiError: { color: C.red, fontSize: 12, marginBottom: 10 },
   subLabel: { color: C.textDim, fontSize: 11, fontWeight: "800", letterSpacing: 1, marginTop: 12, marginBottom: 6 },
   itemRow: {
     flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card,
