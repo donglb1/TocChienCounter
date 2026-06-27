@@ -12,6 +12,7 @@ import { resolveDDragonVersion, resolveChampionRoster } from "./src/lib/images";
 import { useVersionCheck } from "./src/lib/useVersionCheck";
 import { resolveItemCatalog } from "./src/lib/api";
 import { NewsProvider, useNews } from "./src/lib/newsContext";
+import ErrorBoundary from "./src/components/ErrorBoundary";
 import HomeScreen from "./src/screens/HomeScreen";
 import SetupScreen from "./src/screens/SetupScreen";
 import ConfirmScreen from "./src/screens/ConfirmScreen";
@@ -35,9 +36,11 @@ const EMPTY_SUGGEST = { lane: "", allies: [], enemies: [], build: null, champ: "
 
 export default function App() {
   return (
-    <NewsProvider>
-      <AppShell />
-    </NewsProvider>
+    <ErrorBoundary>
+      <NewsProvider>
+        <AppShell />
+      </NewsProvider>
+    </ErrorBoundary>
   );
 }
 

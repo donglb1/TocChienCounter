@@ -6,7 +6,7 @@
 //    KHÔNG dùng localhost (điện thoại không hiểu localhost của máy).
 
 import { repairJson } from "./repairJson";
-import { ITEM_CATALOG } from "../data/items";
+import { itemCatalogForDamage } from "../data/items";
 import { CHAMPION_ALLOWLIST, findChampion, BUILD_LABELS } from "../data/champions";
 import { KEYSTONE_CATALOG, SPELL_CATALOG } from "../data/runes";
 import { setLiveItems, getLiveChampMeta } from "./liveData";
@@ -68,6 +68,7 @@ export async function extractChampions({ imageBase64, mediaType, champ, lane }) 
 
 // Phân tích team địch → build + ngọc + phép khắc chế
 export async function analyzeBuild({ champ, lane, enemies, laneOpponent }) {
+  const meta = champMeta(champ); // đặc tính tướng người chơi (gồm damageType)
   const res = await fetch(`${BACKEND_URL}/api/analyze`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -77,11 +78,12 @@ export async function analyzeBuild({ champ, lane, enemies, laneOpponent }) {
       lane,
       enemies,
       laneOpponent: laneOpponent || null, // tướng đối lane trực tiếp (build sớm bám matchup)
-      champMeta: champMeta(champ), // đặc tính tướng người chơi
+      champMeta: meta,
       enemyMeta: (enemies || []).map(champMeta), // đặc tính từng tướng địch
       runes: KEYSTONE_CATALOG, // catalog ngọc + khi nào dùng
       spells: SPELL_CATALOG, // catalog phép bổ trợ + khi nào dùng
-      items: ITEM_CATALOG, // catalog item kèm thuộc tính → AD chọn dựa dữ liệu
+      // Catalog item LỌC theo hệ sát thương tướng → bớt token, AI vẫn đủ item counter
+      items: itemCatalogForDamage(meta?.dmg),
     }),
   });
   if (!res.ok) throw new Error(`Backend lỗi ${res.status}: ${await safeText(res)}`);

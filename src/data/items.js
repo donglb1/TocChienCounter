@@ -140,12 +140,29 @@ export const ITEMS = [
 export const ITEM_ALLOWLIST = ITEMS.flatMap((i) => [i.name, i.vi]);
 
 // Catalog rút gọn để nhồi vào prompt: tên + loại + mô tả thuộc tính (grounding cho AI)
-export const ITEM_CATALOG = ITEMS.map((i) => ({
-  name: i.name,
-  vi: i.vi,
-  type: i.type,
-  desc: i.desc,
-}));
+const toCatalog = (i) => ({ name: i.name, vi: i.vi, type: i.type, desc: i.desc });
+export const ITEM_CATALOG = ITEMS.map(toCatalog);
+
+// Suy loại sát thương của 1 item TẤN CÔNG theo tag (chỉ khi CHẮC CHẮN).
+//   magicPen → AP; armorPen/critDamage/onHit/lifesteal → AD; còn lại → null (giữ cả 2).
+function offenseDamage(item) {
+  const t = item.tags || [];
+  if (t.includes("magicPen")) return "AP";
+  if (t.some((x) => ["armorPen", "critDamage", "onHit", "lifesteal"].includes(x))) return "AD";
+  return null;
+}
+
+// Catalog LỌC theo damage type tướng người chơi → giảm token/độ trễ khi gọi AI.
+// Giữ toàn bộ item phòng thủ/giày/hỗ trợ (counter chung) + item tấn công CÙNG hệ
+// (hoặc chưa rõ hệ). AD không nhận item AP rõ rệt và ngược lại. mixed/unknown → full.
+export function itemCatalogForDamage(dmg) {
+  if (dmg !== "AD" && dmg !== "AP") return ITEM_CATALOG;
+  return ITEMS.filter((i) => {
+    if (i.type !== "offense") return true;
+    const d = offenseDamage(i);
+    return !d || d === dmg;
+  }).map(toCatalog);
+}
 
 // Map slug item (từ web build) → item DB. Khớp dạng "youmuus-ghostblade", "black-cleaver"…
 import { noDiacritics, nameKey } from "../theme";
