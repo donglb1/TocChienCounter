@@ -159,13 +159,13 @@ CÁCH PHÂN TÍCH:
    - Sát thủ burst -> đồ cứu mạng (revive/shield/stasis). Nhiều CC -> kháng hiệu ứng (tenacity).
 4. Ngọc + phép bổ trợ chọn theo đối thủ (vd địch hồi máu -> Thiêu Đốt; sát thủ/xạ thủ mạnh -> Kiệt Sức).
 
-CHỈ chọn TRANG BỊ trong CATALOG (trả tên tiếng Anh, không bịa):
+CHỈ chọn TRANG BỊ trong CATALOG — trả tên tiếng Anh CHÍNH XÁC như trong catalog (không bịa, không đổi dấu nháy):
 ${itemList}
 
-CHỈ chọn NGỌC trong danh sách (trả tên tiếng Anh):
+CHỈ chọn NGỌC trong danh sách — trả tên tiếng Anh CHÍNH XÁC như trong danh sách:
 ${runeList}
 
-CHỈ chọn PHÉP trong danh sách (trả tên tiếng Anh):
+CHỈ chọn PHÉP trong danh sách — trả tên tiếng Anh CHÍNH XÁC như trong danh sách:
 ${spellList}
 
 YÊU CẦU OUTPUT — VIẾT NGẮN GỌN:

@@ -20,6 +20,8 @@ export const KEYSTONES = [
   { name: "Glacial Augment", vi: "Tăng Cường Băng Giá", for: "kiểm soát/làm chậm, khắc tướng cơ động cần áp sát" },
   { name: "Hail of Blades", vi: "Mưa Lưỡi Kiếm", for: "sát thủ/đánh nhanh burst đầu trận" },
   { name: "Phase Rush", vi: "Tăng Tốc Pha", for: "cần thoát/kite khỏi sát thủ-đấu sĩ áp sát" },
+  { name: "Dark Harvest", vi: "Nông Thu Đen", for: "sát thủ snowball, gây sát thương cộng thêm lên địch máu thấp" },
+  { name: "Guardian", vi: "Hộ Vệ", for: "hỗ trợ bảo vệ đồng minh, tạo khiên khi ở gần nhau" },
 ];
 
 export const SPELLS = [
@@ -36,13 +38,16 @@ export const KEYSTONE_CATALOG = KEYSTONES.map((k) => ({ name: k.name, vi: k.vi, 
 export const SPELL_CATALOG = SPELLS.map((s) => ({ name: s.name, vi: s.vi, for: s.for }));
 
 import { noDiacritics } from "../theme";
+function runeKey(s) {
+  return noDiacritics(s).replace(/[^a-z0-9]/g, "");
+}
 export function findKeystone(q) {
-  const n = noDiacritics(q);
+  const n = runeKey(q);
   if (!n) return null;
-  return KEYSTONES.find((k) => noDiacritics(k.name) === n || noDiacritics(k.vi) === n) || null;
+  return KEYSTONES.find((k) => runeKey(k.name) === n || runeKey(k.vi) === n) || null;
 }
 export function findSpell(q) {
-  const n = noDiacritics(q);
+  const n = runeKey(q);
   if (!n) return null;
-  return SPELLS.find((s) => noDiacritics(s.name) === n || noDiacritics(s.vi) === n) || null;
+  return SPELLS.find((s) => runeKey(s.name) === n || runeKey(s.vi) === n) || null;
 }
