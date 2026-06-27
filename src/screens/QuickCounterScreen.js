@@ -9,10 +9,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { C, GRAD, LANES, glow } from "../theme";
 import { findChampion, BUILD_LABELS } from "../data/champions";
-import { championIcon } from "../lib/images";
-import { matchupTips } from "../lib/matchup";
+import { championIcon, itemIcon } from "../lib/images";
+import { matchupTips, counterItems } from "../lib/matchup";
 import { suggestPicks } from "../lib/api";
 import { LanePicker, ChampSearch } from "../components/inputs";
+import ItemDetailModal from "../components/ItemDetailModal";
 
 // Tiêu đề mục có icon vector
 function SectionTitle({ icon, children }) {
@@ -35,6 +36,7 @@ export default function QuickCounterScreen() {
   const [enemy, setEnemy] = useState(null);
   const [picks, setPicks] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [detailItem, setDetailItem] = useState(null);
 
   const pick = (c) => {
     setEnemy(c);
@@ -43,6 +45,7 @@ export default function QuickCounterScreen() {
 
   const tips = enemy ? matchupTips(enemy) : null;
   const danger = tips ? DANGER[tips.danger] : null;
+  const counters = enemy ? counterItems(enemy) : [];
 
   const askAI = async () => {
     if (!enemy) return;
@@ -109,6 +112,35 @@ export default function QuickCounterScreen() {
             ))
           )}
 
+          {counters.length > 0 && (
+            <>
+              <SectionTitle icon="shield-checkmark-outline">BỘ TRANG BỊ KHẮC CHẾ</SectionTitle>
+              {counters.map(({ item, reason }, i) => {
+                const icon = itemIcon(item);
+                return (
+                  <TouchableOpacity
+                    key={item.id || i}
+                    style={styles.ctrRow}
+                    activeOpacity={0.7}
+                    onPress={() => setDetailItem(item)}
+                  >
+                    {icon ? (
+                      <Image source={{ uri: icon }} style={styles.ctrIcon} />
+                    ) : (
+                      <View style={[styles.ctrIcon, styles.ctrIconFallback]}>
+                        <Text style={styles.ctrIconText}>{(item.vi || item.name).slice(0, 2)}</Text>
+                      </View>
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.ctrName}>{item.vi}</Text>
+                      <Text style={styles.ctrReason}>{reason}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </>
+          )}
+
           <TouchableOpacity style={styles.aiBtn} onPress={askAI} disabled={loading} activeOpacity={0.85}>
             {loading ? (
               <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
@@ -144,6 +176,8 @@ export default function QuickCounterScreen() {
           )}
         </>
       )}
+
+      <ItemDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
     </ScrollView>
   );
 }
@@ -175,4 +209,10 @@ const styles = StyleSheet.create({
   pickName: { color: C.text, fontSize: 15, fontWeight: "700" },
   pickTier: { color: C.amber, fontWeight: "900" },
   pickReason: { color: C.textDim, fontSize: 12, marginTop: 2 },
+  ctrRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderRadius: 10, borderWidth: 1, borderColor: C.border, padding: 8, marginBottom: 7 },
+  ctrIcon: { width: 36, height: 36, borderRadius: 8, backgroundColor: C.cardAlt },
+  ctrIconFallback: { alignItems: "center", justifyContent: "center" },
+  ctrIconText: { color: C.textDim, fontWeight: "800", fontSize: 12 },
+  ctrName: { color: C.text, fontSize: 14, fontWeight: "700" },
+  ctrReason: { color: C.textDim, fontSize: 12, marginTop: 2 },
 });

@@ -2,6 +2,41 @@
 // Sinh MẸO KHẮC CHẾ 1v1 OFFLINE từ đặc tính tướng địch (damageType/burst/cc/healing/spike/range/threat).
 // Không tốn API — phục vụ tra nhanh đối thủ cùng đường.
 
+import { ITEMS } from "../data/items";
+
+// Bộ TRANG BỊ KHẮC CHẾ (offline) theo đặc tính địch — chỉ chọn item PHÒNG THỦ/GIÀY curated
+// (champ-agnostic: đúng bất kể bạn cầm tướng nào). Trả [{ item, reason }], tối đa 6 món.
+export function counterItems(enemy) {
+  if (!enemy) return [];
+  const out = [];
+  const seen = new Set();
+  const isDef = (i) => i.type === "defense" || i.type === "boots";
+  const has = (i, t) => (i.tags || []).includes(t);
+  const pick = (pred, reason, n = 2) => {
+    let count = 0;
+    for (const i of ITEMS) {
+      if (out.length >= 6 || count >= n) break;
+      if (!seen.has(i.id) && isDef(i) && pred(i)) {
+        seen.add(i.id);
+        out.push({ item: i, reason });
+        count++;
+      }
+    }
+  };
+  // ưu tiên: Vết Thương Sâu (nếu địch hồi máu) → kháng theo hệ sát thương → chống burst → kháng CC → chống chí mạng
+  if (enemy.healing) pick((i) => has(i, "grievous"), "Giảm hồi máu địch (Vết Thương Sâu)", 2);
+  if (enemy.damageType === "AP") pick((i) => has(i, "mr"), "Kháng phép chống sát thương AP", 2);
+  else if (enemy.damageType === "AD") pick((i) => has(i, "armor"), "Giáp chống sát thương AD", 2);
+  else {
+    pick((i) => has(i, "mr"), "Kháng phép (địch sát thương hỗn hợp)", 1);
+    pick((i) => has(i, "armor"), "Giáp (địch sát thương hỗn hợp)", 1);
+  }
+  if (enemy.burst) pick((i) => has(i, "shield") || has(i, "revive"), "Chống sát thương nổ (khiên/hồi sinh)", 1);
+  if (enemy.cc === "high") pick((i) => has(i, "tenacity"), "Kháng hiệu ứng, giảm thời gian khống chế", 1);
+  if (enemy.role === "Marksman" && !enemy.burst) pick((i) => has(i, "antiCrit"), "Chống chí mạng (xạ thủ crit)", 1);
+  return out.slice(0, 6);
+}
+
 // Trả: { shopping: [{label, note}], tips: [string], danger: "low|mid|high" }
 export function matchupTips(enemy) {
   if (!enemy) return null;
