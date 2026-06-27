@@ -1,6 +1,7 @@
 // src/screens/HomeScreen.js
 // Trang chủ: feed tin tức Tốc Chiến cào từ trang chính thức. Chạm 1 tin → mở trình duyệt.
-import React, { useEffect, useState, useCallback } from "react";
+// Dữ liệu lấy từ NewsContext (fetch 1 lần, dùng chung với header app).
+import React, { useState } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, FlatList, Image,
   ActivityIndicator, RefreshControl, Linking,
@@ -10,7 +11,7 @@ import * as WebBrowser from "expo-web-browser";
 import { Ionicons } from "@expo/vector-icons";
 import { C } from "../theme";
 import { CornerBrackets } from "../components/neon";
-import { fetchNews } from "../lib/api";
+import { useNews } from "../lib/newsContext";
 
 // "2026-05-27T09:00:00Z" → "27/05/2026"
 function fmtDate(iso) {
@@ -22,33 +23,14 @@ function fmtDate(iso) {
 }
 
 export default function HomeScreen() {
-  const [news, setNews] = useState([]);
-  const [fallbackUrl, setFallbackUrl] = useState("");
-  const [loading, setLoading] = useState(true);
+  const { news, fallbackUrl, loading, error, reload } = useNews();
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
 
-  const load = useCallback(async (isRefresh) => {
-    isRefresh ? setRefreshing(true) : setLoading(true);
-    setError("");
-    try {
-      const data = await fetchNews();
-      setNews(data.news || []);
-      setFallbackUrl(data.fallbackUrl || "");
-      if ((data.news || []).length === 0) {
-        setError("Chưa lấy được tin lúc này.");
-      }
-    } catch (e) {
-      setError(String(e.message || e));
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load(false);
-  }, [load]);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await reload(true);
+    setRefreshing(false);
+  };
 
   // Mở tin NGAY TRONG APP (Custom Tab/Safari overlay), có nút Xong để quay lại.
   // Lỗi (vd URL không hợp lệ) → rơi về trình duyệt hệ thống cho chắc.
@@ -108,7 +90,7 @@ export default function HomeScreen() {
       keyExtractor={(it, i) => `${it.url}-${i}`}
       renderItem={renderItem}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={C.amber} />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.amber} />
       }
       ListEmptyComponent={
         <View style={styles.center}>

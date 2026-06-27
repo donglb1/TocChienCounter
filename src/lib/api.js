@@ -130,10 +130,19 @@ export async function fetchTierList() {
 }
 
 // Lấy build THỰC TẾ theo patch của 1 tướng (cào qua backend). Lỗi → ok:false để client fallback.
+// Cache-first theo slug (24h): mở lại 1 tướng không gọi mạng nữa; chỉ cache build hợp lệ (ok).
 export async function fetchChampBuild(slug) {
-  const res = await fetch(`${BACKEND_URL}/api/champbuild?slug=${encodeURIComponent(slug)}`);
-  if (!res.ok) throw new Error(`Backend lỗi ${res.status}`);
-  return await res.json(); // { slug, starting, boots, core, situational, ok, source }
+  const data = await cachedResolve(
+    `champbuild:${slug}`,
+    ITEM_CATALOG_TTL,
+    async () => {
+      const res = await fetch(`${BACKEND_URL}/api/champbuild?slug=${encodeURIComponent(slug)}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json && json.ok ? json : null; // build rỗng/lỗi → giữ fallback, không cache
+    }
+  );
+  return data || { slug, starting: [], boots: [], core: [], situational: [], ok: false };
 }
 
 // Nạp catalog item Wild Rift (tên + icon thật) từ backend → liveData. Gọi 1 lần lúc app mở.

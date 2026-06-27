@@ -10,7 +10,8 @@ import { C, GRAD, glow } from "./src/theme";
 const ACCENT = C.violet;
 import { resolveDDragonVersion, resolveChampionRoster } from "./src/lib/images";
 import { useVersionCheck } from "./src/lib/useVersionCheck";
-import { fetchNews, resolveItemCatalog } from "./src/lib/api";
+import { resolveItemCatalog } from "./src/lib/api";
+import { NewsProvider, useNews } from "./src/lib/newsContext";
 import HomeScreen from "./src/screens/HomeScreen";
 import SetupScreen from "./src/screens/SetupScreen";
 import ConfirmScreen from "./src/screens/ConfirmScreen";
@@ -33,6 +34,14 @@ const EMPTY_BUILD = { champ: "", lane: "", imageUri: null, enemies: [], build: n
 const EMPTY_SUGGEST = { lane: "", allies: [], enemies: [], build: null, champ: "" };
 
 export default function App() {
+  return (
+    <NewsProvider>
+      <AppShell />
+    </NewsProvider>
+  );
+}
+
+function AppShell() {
   const [tab, setTab] = useState("home");
 
   // Luồng BUILD: setup → confirm → (picks | result)
@@ -46,11 +55,10 @@ export default function App() {
   const patchSuggest = (n) => setSuggestSession((s) => ({ ...s, ...n }));
 
   useVersionCheck();
-  const [patch, setPatch] = useState(null);
+  const { patch } = useNews(); // news fetch 1 lần ở NewsProvider, dùng chung với HomeScreen
   useEffect(() => {
     resolveDDragonVersion().then(() => resolveChampionRoster());
     resolveItemCatalog(); // nạp catalog item Wild Rift (tên + icon thật) tự bám patch
-    fetchNews().then((d) => setPatch(d.patch)).catch(() => {});
   }, []);
 
   const stepLabel = () => {
