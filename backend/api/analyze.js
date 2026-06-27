@@ -212,11 +212,12 @@ CHỈ trả JSON thuần (không markdown, không \`\`\`):
 // ───────────────────────── CHAMPBUILD (build chuẩn 1 tướng, không có đối thủ) ─────────────────────────
 // Thay nguồn cào (lolwildriftbuild lẫn item PC) bằng AI đề xuất build TIÊU CHUẨN cho 1 tướng,
 // CHỈ chọn trong catalog Tốc Chiến curated → không lòi item LMHT PC.
-function buildChampBuild({ champ, lane, champMeta, items, runes, spells }) {
+function buildChampBuild({ champ, lane, champMeta, items, runes, minorRunes, spells }) {
   const itemList = (items || [])
     .map((i) => `- ${i.name} (${i.vi}) [${i.type}]: ${i.desc}`)
     .join("\n");
-  const runeList = (runes || []).map((r) => `- ${r.name} (${r.vi}): ${r.desc}`).join("\n");
+  const runeList = (runes || []).map((r) => `- [${r.tree}] ${r.name} (${r.vi}): ${r.desc}`).join("\n");
+  const minorList = fmtMinorRunes(minorRunes);
   const spellList = (spells || []).map((s) => `- ${s.name} (${s.vi}): ${s.desc}`).join("\n");
   const me = champMeta ? fmtChamp(champMeta).replace(/^- /, "") : champ;
 
@@ -239,22 +240,25 @@ CHỈ chọn TRANG BỊ trong CATALOG dưới đây (trả tên tiếng Anh CHÍ
 "item" bên PC ở Tốc Chiến là NGỌC (vd Kraken Slayer) — không đưa vào trang bị.
 ${itemList}
 
-CHỈ chọn NGỌC trong danh sách (trả tên tiếng Anh chính xác):
+CHỈ chọn NGỌC CHÍNH trong danh sách (mỗi ngọc kèm [Nhánh]) — trả tên tiếng Anh chính xác:
 ${runeList}
+
+NGỌC PHỤ — LUẬT TỐC CHIẾN: chọn ĐÚNG 4 ngọc phụ = 3 ngọc CÙNG NHÁNH với ngọc chính đã chọn + 1 ngọc thuộc MỘT NHÁNH KHÁC. Trả ĐÚNG tên tiếng Việt như danh sách:
+${minorList}
 
 CHỈ chọn PHÉP trong danh sách (trả tên tiếng Anh chính xác):
 ${spellList}
 
 YÊU CẦU OUTPUT — NGẮN GỌN:
 - "boots": 1 đôi giày. "core": 3 món cốt lõi (thứ tự lên). "situational": 2-3 món tùy tình huống.
-- "keystone": 1 ngọc; "spells": ĐÚNG 2 phép. "reason" ≤8 từ. "playstyle" ≤20 từ.
+- "keystone": 1 ngọc chính; "minorRunes": ĐÚNG 4 ngọc phụ (3 cùng nhánh + 1 nhánh khác); "spells": ĐÚNG 2 phép. "reason" ≤8 từ. "playstyle" ≤20 từ.
 
 CHỈ trả JSON thuần (không markdown, không \`\`\`):
-{"boots":"","core":["",""],"situational":["",""],"keystone":{"name":"","reason":""},"spells":[{"name":"","reason":""}],"playstyle":""}`;
+{"boots":"","core":["",""],"situational":["",""],"keystone":{"name":"","reason":""},"minorRunes":[{"name":"","reason":""}],"spells":[{"name":"","reason":""}],"playstyle":""}`;
 
   return {
     model: ANALYZE_MODEL,
-    max_tokens: 900,
+    max_tokens: 1100,
     ...ANALYZE_CFG,
     messages: [{ role: "user", content: prompt }],
   };

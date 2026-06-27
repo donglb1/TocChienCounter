@@ -9,7 +9,7 @@ import { C, glow, noDiacritics, slugify } from "../theme";
 import { CHAMPIONS, BUILD_LABELS, findChampion, findChampionBySlug } from "../data/champions";
 import { getChampionBuild } from "../data/buildTemplates";
 import { findItem } from "../data/items";
-import { findKeystone, findSpell } from "../data/runes";
+import { findKeystone, findSpell, findRune } from "../data/runes";
 import { Ionicons } from "@expo/vector-icons";
 import { championIcon, itemIcon, ddragonIdByName, runeIcon, spellIcon } from "../lib/images";
 import { useLiveData } from "../lib/liveData";
@@ -279,6 +279,7 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
   const core = usingAi ? curate(ai.core) : tpl ? tpl.core : [];
   const situational = usingAi ? curate(ai.situational) : tpl ? tpl.situational : [];
   const keystone = usingAi ? ai.keystone?.name : tpl?.keystone;
+  const minorRunes = usingAi ? (ai.minorRunes || []).filter((r) => r && r.name) : [];
   const spells = usingAi ? (ai.spells || []).map((s) => s.name) : tpl?.spells;
   const note = usingAi ? ai.playstyle : tpl?.note;
   const hasBuild = core.length > 0 || boots.length > 0;
@@ -374,6 +375,9 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
               {keystone ? (
                 <RuneRow rune={findKeystone(keystone) || { name: keystone }} kind="keystone" badge="NGỌC" onOpen={setDetailRune} />
               ) : null}
+              {minorRunes.map((r, i) => (
+                <RuneRow key={`mn${i}`} rune={findRune(r.name) || { name: r.name }} kind="minor" badge="NGỌC PHỤ" badgeStyle={styles.rsBadgeMinor} onOpen={setDetailRune} />
+              ))}
               {(spells || []).map((s, i) => (
                 <RuneRow key={`sp${i}`} rune={findSpell(s) || { name: s }} kind="spell" badge="PHÉP" badgeStyle={styles.rsBadgeSpell} onOpen={setDetailRune} />
               ))}
@@ -524,6 +528,7 @@ const styles = StyleSheet.create({
   rsIconText: { color: C.textDim, fontWeight: "800", fontSize: 11 },
   rsBadge: { color: C.amber, borderColor: C.amberDim, borderWidth: 1, borderRadius: 5, fontSize: 10, fontWeight: "800", paddingHorizontal: 6, paddingVertical: 2 },
   rsBadgeSpell: { color: C.cyan, borderColor: C.cyanDim },
+  rsBadgeMinor: { color: C.violet, borderColor: C.violetDim },
   rsName: { color: C.text, fontSize: 14, fontWeight: "700", flexShrink: 1 },
   noteCard: { backgroundColor: C.cardAlt, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 13, marginTop: 18 },
   noteLabel: { color: C.textDim, fontSize: 11, fontWeight: "800", letterSpacing: 1, marginBottom: 6 },

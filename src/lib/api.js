@@ -208,6 +208,7 @@ async function requestChampBuildAI(champName, lane) {
       lane: lane || null,
       champMeta: meta,
       runes: KEYSTONE_CATALOG,
+      minorRunes: MINOR_RUNE_CATALOG,
       spells: SPELL_CATALOG,
       items: itemCatalogForDamage(meta?.dmg),
     }),
@@ -216,13 +217,13 @@ async function requestChampBuildAI(champName, lane) {
   const data = await res.json();
   const parsed = repairJson(data.text || "");
   if (!parsed) throw new Error("Không đọc được build AI (JSON hỏng).");
-  return parsed; // { boots, core:[], situational:[], keystone:{name,reason}, spells:[{name,reason}], playstyle }
+  return parsed; // { boots, core, situational, keystone, minorRunes:[{name,reason}], spells, playstyle }
 }
 
 // AI đề xuất BUILD CHUẨN cho 1 tướng (Thư viện) — thay nguồn cào lỗi. Chỉ chọn trong catalog curated.
 // Cache 7 ngày theo tên tướng. force=true → bỏ qua cache, phân tích LẠI (nút "Phân tích lại").
 export async function aiChampionBuild(champName, lane, force = false) {
-  const key = `aibuild:${champName}`;
+  const key = `aibuild2:${champName}`; // v2: thêm ngọc phụ → bỏ cache cũ
   if (force) {
     const fresh = await requestChampBuildAI(champName, lane);
     setCached(key, fresh);
@@ -235,7 +236,7 @@ export async function aiChampionBuild(champName, lane, force = false) {
 
 // Peek build AI đã cache (KHÔNG gọi mạng) → hiện sẵn nếu trước đó đã tạo. Chưa có → null.
 export async function getCachedAiBuild(champName) {
-  const c = await getCached(`aibuild:${champName}`);
+  const c = await getCached(`aibuild2:${champName}`);
   return c ? c.data : null;
 }
 
