@@ -6,10 +6,10 @@
 //    KHÔNG dùng localhost (điện thoại không hiểu localhost của máy).
 
 import { repairJson } from "./repairJson";
-import { itemCatalogForDamage } from "../data/items";
+import { itemCatalogForDamage, findItemBySlug } from "../data/items";
 import { CHAMPION_ALLOWLIST, findChampion, findChampionBySlug, championSlug, BUILD_LABELS } from "../data/champions";
 import { KEYSTONE_CATALOG, SPELL_CATALOG } from "../data/runes";
-import { setLiveItems, getLiveChampMeta, getLiveItemBySlug } from "./liveData";
+import { setLiveItems, getLiveChampMeta } from "./liveData";
 import { cachedResolve } from "./storage";
 
 const ITEM_CATALOG_TTL = 24 * 60 * 60 * 1000; // 24h
@@ -69,7 +69,7 @@ export async function extractChampions({ imageBase64, mediaType, champ, lane }) 
 // Đổi list slug item (từ build live) → tên item thật để AI đọc được. Slug lạ → bỏ.
 function slugsToItemNames(slugs) {
   return (slugs || [])
-    .map((s) => getLiveItemBySlug(s)?.name)
+    .map((s) => findItemBySlug(s, true)?.name) // curatedOnly → bỏ item LMHT-PC từ nguồn cào
     .filter(Boolean);
 }
 

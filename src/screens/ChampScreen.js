@@ -21,9 +21,6 @@ import { fetchTierList, fetchChampBuild } from "../lib/api";
 function champToSlug(champ) {
   return slugify(champ.name);
 }
-function prettySlug(s) {
-  return String(s).split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-}
 
 const RANGE = { xa: "Tầm xa", can: "Cận chiến" };
 const SPIKE = { som: "Mạnh sớm", giua: "Mạnh giữa trận", muon: "Mạnh cuối trận" };
@@ -260,14 +257,19 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
     return () => { alive = false; };
   }, [slug]);
 
-  const mapSlugs = (arr) => (arr || []).map((s) => {
-    const it = findItemBySlug(s);
-    return it ? it.name : prettySlug(s);
-  });
-  const usingLive = !!(live && live.core && live.core.length);
-  const boots = usingLive ? mapSlugs(live.boots) : tpl ? [tpl.boots] : [];
-  const core = usingLive ? mapSlugs(live.core) : tpl ? tpl.core : [];
-  const situational = usingLive ? mapSlugs(live.situational) : tpl ? tpl.situational : [];
+  // Build live LỌC theo DB Tốc Chiến: nguồn cào lẫn item LMHT-PC → chỉ giữ món có trong items.js.
+  const mapSlugs = (arr) => (arr || [])
+    .map((s) => findItemBySlug(s, true)) // curatedOnly → bỏ item PC/lạ
+    .filter(Boolean)
+    .map((it) => it.name);
+  const liveBoots = mapSlugs(live && live.boots);
+  const liveCore = mapSlugs(live && live.core);
+  const liveSituational = mapSlugs(live && live.situational);
+  // Chỉ dùng build live khi còn ĐỦ món WR thật sau lọc (>=3 cốt lõi); nếu không → build mẫu offline.
+  const usingLive = liveCore.length >= 3;
+  const boots = usingLive ? liveBoots : tpl ? [tpl.boots] : [];
+  const core = usingLive ? liveCore : tpl ? tpl.core : [];
+  const situational = usingLive ? liveSituational : tpl ? tpl.situational : [];
   const hasBuild = core.length > 0 || boots.length > 0;
   const sourceLabel = usingLive ? "Cập nhật theo patch hiện tại" : tpl ? "Build mẫu (offline)" : null;
 

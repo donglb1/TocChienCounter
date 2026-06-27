@@ -170,16 +170,15 @@ const ITEM_SLUG_MAP = (() => {
   for (const i of ITEMS) for (const v of itemSlugVariants(i.name)) map[v] = i;
   return map;
 })();
-export function findItemBySlug(slug) {
+// curatedOnly=true → CHỈ tra DB tĩnh (items.js), KHÔNG fallback catalog live.
+// Dùng cho build live ở Thư viện: nguồn cào lẫn item LMHT-PC → lọc bỏ món ngoài DB WR.
+export function findItemBySlug(slug, curatedOnly = false) {
   if (!slug) return null;
   const s = String(slug).toLowerCase();
   if (ITEM_SLUG_ALIAS[s]) return findItem(ITEM_SLUG_ALIAS[s]);
-  return (
-    ITEM_SLUG_MAP[s] ||
-    ITEM_SLUG_MAP[s.replace(/-/g, "")] ||
-    liveToItem(getLiveItemBySlug(s)) || // item mới ngoài DB tĩnh → catalog live
-    null
-  );
+  const curated = ITEM_SLUG_MAP[s] || ITEM_SLUG_MAP[s.replace(/-/g, "")] || null;
+  if (curated || curatedOnly) return curated;
+  return liveToItem(getLiveItemBySlug(s)); // item mới ngoài DB tĩnh → catalog live
 }
 
 // Tra item theo tên (Anh hoặc Việt). DB tĩnh trước → catalog live (item mới) → null.
