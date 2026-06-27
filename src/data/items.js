@@ -106,6 +106,33 @@ export const ITEMS = [
   { id: "harmonicecho", name: "Harmonic Echo", vi: "Vọng Âm Hòa Điệu", type: "support", tags: ["healShield"], desc: "Khi hồi/khiên, lan thêm hồi máu cho đồng minh xung quanh. Cho hỗ trợ hồi máu giao tranh tổng.", img: null },
   { id: "imperialmandate", name: "Imperial Mandate", vi: "Trát Lệnh Đế Vương", type: "support", tags: ["slow", "healShield"], desc: "Đánh dấu địch bị làm chậm/khống chế để đồng minh kích nổ gây thêm sát thương. Cho hỗ trợ pháp/mở giao tranh.", img: null },
   { id: "redemption", name: "Redeeming Enchant", vi: "Dây Chuyền Chuộc Tội", type: "support", tags: ["healShield"], desc: "Kích hoạt gọi vùng hồi máu đồng minh + gây sát thương và Vết Thương Sâu lên địch trong vùng. Cứu giao tranh tổng.", img: null },
+
+  // ─── BỔ SUNG từ catalog WR live (món hay hiện trong build nhưng còn thiếu) ───
+  // ⚠ Tên tiếng Việt là BEST-EFFORT, CẦN SOÁT lại với client VN. Các id chưa chắc tên:
+  //   statikkshiv, witsend, umbralglaive, solarichargeblade, bansheesveil, hextechgunblade,
+  //   crystallinereflector, athenesgrail, hextechmegadrive, frozenmallet, spiritvisage,
+  //   fimbulwinter, ixtaliseedjar, talismanascension, blackmistscythe.
+  // name (Anh) + slug khớp catalog live nên build live tự map ra tiếng Việt.
+  { id: "rapidfirecannon", name: "Rapid Firecannon", vi: "Đại Bác Liên Thanh", type: "offense", tags: ["critDamage", "onHit"], desc: "Chí mạng + tốc đánh; đòn tích điện gây thêm sát thương và tăng tầm đánh. Cho xạ thủ chí mạng.", img: null },
+  { id: "statikkshiv", name: "Statikk Shiv", vi: "Lưỡi Tầm Sét Statikk", type: "offense", tags: ["critDamage", "onHit"], desc: "Chí mạng + tốc đánh; đòn tích điện lan sét sang địch xung quanh. Dọn lính + giao tranh diện rộng.", img: null },
+  { id: "immortalshieldbow", name: "Immortal Shieldbow", vi: "Cung Khiên Bất Tử", type: "offense", tags: ["critDamage", "lifesteal", "shield"], desc: "Chí mạng + hút máu; tạo khiên lớn khi máu xuống thấp. Chống burst cho xạ thủ.", img: null },
+  { id: "muramana", name: "Muramana", vi: "Kiếm Muramana", type: "offense", tags: [], desc: "Năng lượng lớn chuyển thành sát thương; đòn đánh/chiêu cộng thêm sát thương theo năng lượng. Nâng cấp từ Manamune.", img: null },
+  { id: "witsend", name: "Wit's End", vi: "Hồi Kết", type: "offense", tags: ["onHit", "mr"], desc: "Tốc đánh + kháng phép; đòn đánh gây thêm sát thương phép on-hit. Cho on-hit cần chống AP.", img: null },
+  { id: "umbralglaive", name: "Umbral Glaive", vi: "Lưỡi Hái Bóng Tối", type: "offense", tags: ["armorPen"], desc: "Xuyên giáp (lethality); phá mắt và kiểm soát tầm nhìn. Cho sát thủ AD đi bắt lẻ.", img: null },
+  { id: "solarichargeblade", name: "Solari Chargeblade", vi: "Đại Kiếm Solari", type: "offense", tags: ["critDamage", "onHit"], desc: "Chí mạng + tốc đánh; tích điện rồi tung loạt sát thương cộng thêm. Cho xạ thủ đánh nhanh.", img: null },
+  { id: "voidstaff", name: "Void Staff", vi: "Trượng Hư Vô", type: "offense", tags: ["magicPen"], desc: "Sức mạnh phép + xuyên kháng phép mạnh theo %. Khắc địch lên nhiều kháng phép.", img: null },
+  { id: "bansheesveil", name: "Banshee's Veil", vi: "Khăn Choàng Banshee", type: "offense", tags: ["magicPen", "shield"], desc: "Phép + khiên chắn một chiêu (spell shield). Chống burst/CC mở từ pháp sư cho AP.", img: null },
+  { id: "hextechgunblade", name: "Hextech Gunblade", vi: "Đao Kiếm Hextech", type: "offense", tags: ["omnivamp"], desc: "Sức mạnh phép + hút máu mọi nguồn; kích hoạt gây phép và làm chậm. Cho AP đấu sĩ lì đòn.", img: null },
+  { id: "crystallinereflector", name: "Crystalline Reflector", vi: "Lăng Kính Pha Lê", type: "defense", tags: ["armor"], desc: "Giáp + sức mạnh phép; phản một phần sát thương. Cho AP cần chống AD.", img: null },
+  { id: "athenesgrail", name: "Athene's Unholy Grail", vi: "Chén Thánh Athene", type: "support", tags: ["healShield"], desc: "Phép + kháng phép + hồi năng lượng; tích năng lượng hồi/khiên đồng minh. Cho hỗ trợ pháp.", img: null },
+  { id: "hextechmegadrive", name: "Hextech Megadrive", vi: "Cỗ Máy Hextech", type: "offense", tags: [], desc: "Phép + tốc chạy; cộng thêm sát thương khi cơ động. Cho pháp sư cơ động.", img: null },
+  { id: "mejaisoulstealer", name: "Mejai's Soulstealer", vi: "Sách Chiêu Hồn Mejai", type: "offense", tags: [], desc: "Sức mạnh phép tăng theo số lần hạ gục (cộng dồn); rẻ, snowball mạnh khi dẫn trước.", img: null },
+  { id: "frozenmallet", name: "Frozen Mallet", vi: "Chùy Băng", type: "defense", tags: ["hp", "slow"], desc: "Máu lớn; đòn đánh làm chậm địch. Giữ chân mục tiêu cho đấu sĩ/đỡ đòn.", img: null },
+  { id: "spiritvisage", name: "Spirit Visage", vi: "Diện Mạo Tâm Linh", type: "defense", tags: ["mr", "hp", "healShield"], desc: "Kháng phép + máu; tăng hiệu lực mọi nguồn hồi máu/khiên lên bản thân. Cho đỡ đòn có hồi máu.", img: null },
+  { id: "fimbulwinter", name: "Fimbulwinter", vi: "Băng Trượng", type: "defense", tags: ["hp", "shield"], desc: "Máu + năng lượng; tạo khiên khi dùng chiêu gần địch. Nâng cấp từ Băng Giáp (Winter's Approach).", img: null },
+  { id: "ixtaliseedjar", name: "Ixtali Seedjar", vi: "Hũ Mầm Ixtali", type: "defense", tags: ["hp"], desc: "Máu + chỉ số đa dụng; hỗ trợ đỡ đòn/kiểm soát. Món tiện ích.", img: null },
+  { id: "talismanascension", name: "Talisman of Ascension", vi: "Bùa Thăng Thiên", type: "support", tags: ["healShield"], desc: "Hỗ trợ; kích hoạt tăng tốc chạy nhóm để mở/đuổi giao tranh. Cho hỗ trợ mở trận.", img: null },
+  { id: "blackmistscythe", name: "Black Mist Scythe", vi: "Lưỡi Hái Hắc Vụ", type: "support", tags: [], desc: "Trang bị tiền hỗ trợ; kiếm vàng và tầm nhìn. Cho hỗ trợ đi đường.", img: null },
 ];
 
 // Allowlist tên (Anh + Việt) để ép model chỉ chọn từ đây — chống bịa item ma
