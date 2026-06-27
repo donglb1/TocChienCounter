@@ -10,7 +10,7 @@ import { ITEM_CATALOG } from "../data/items";
 import { CHAMPION_ALLOWLIST, findChampion, BUILD_LABELS } from "../data/champions";
 import { KEYSTONE_CATALOG, SPELL_CATALOG } from "../data/runes";
 import { setLiveItems, getLiveChampMeta } from "./liveData";
-import { getCached, setCached } from "./storage";
+import { cachedResolve } from "./storage";
 
 const ITEM_CATALOG_TTL = 24 * 60 * 60 * 1000; // 24h
 
@@ -140,24 +140,19 @@ export async function fetchChampBuild(slug) {
 // Cache-first: áp catalog đã lưu ngay (hiện icon/tên kể cả offline), chỉ fetch lại khi hết TTL.
 // Lỗi mạng → giữ cache (nếu có) hoặc DB tĩnh + icon DDragon như cũ.
 export async function resolveItemCatalog() {
-  const cached = await getCached("item-catalog");
-  if (cached && Array.isArray(cached.data)) setLiveItems(cached.data);
-  if (cached && Date.now() - cached.fetchedAt < ITEM_CATALOG_TTL) {
-    return Array.isArray(cached.data) ? cached.data.length : 0; // còn tươi → bỏ qua mạng
-  }
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/items`);
-    if (!res.ok) return 0;
-    const data = await res.json();
-    const items = data.items || [];
-    if (items.length) {
-      setLiveItems(items);
-      setCached("item-catalog", items); // chỉ ghi đè cache khi cào được data thật
-    }
-    return items.length;
-  } catch (_) {
-    return 0;
-  }
+  const data = await cachedResolve(
+    "item-catalog",
+    ITEM_CATALOG_TTL,
+    async () => {
+      const res = await fetch(`${BACKEND_URL}/api/items`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      const items = json.items || [];
+      return items.length ? items : null; // rỗng → giữ cache cũ
+    },
+    setLiveItems
+  );
+  return Array.isArray(data) ? data.length : 0;
 }
 
 async function safeText(res) {

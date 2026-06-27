@@ -282,16 +282,14 @@ for (const c of CHAMPIONS) {
 // Allowlist tên tướng (Anh) để ép model chỉ gợi ý tướng thật khi đề xuất chọn tướng
 export const CHAMPION_ALLOWLIST = CHAMPIONS.map((c) => c.name);
 
-import { noDiacritics } from "../theme";
+import { noDiacritics, nameKey, slugify } from "../theme";
 
-// Tra tướng theo tên (Anh hoặc Việt, không phân biệt dấu)
+// Tra tướng theo tên (Anh hoặc Việt). Dùng nameKey để chịu nháy typographic (Kha'Zix/Kai'Sa).
 export function findChampion(query) {
-  const q = noDiacritics(query);
+  const q = nameKey(query);
   if (!q) return null;
   return (
-    CHAMPIONS.find(
-      (c) => noDiacritics(c.name) === q || noDiacritics(c.vi) === q
-    ) || null
+    CHAMPIONS.find((c) => nameKey(c.name) === q || nameKey(c.vi) === q) || null
   );
 }
 
@@ -300,10 +298,8 @@ const SLUG_ALIAS = { lilia: "Lillia" }; // site gõ sai/khác
 const SLUG_MAP = (() => {
   const map = {};
   for (const c of CHAMPIONS) {
-    const base = noDiacritics(c.name).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    const tight = noDiacritics(c.name).replace(/[^a-z0-9]+/g, "");
-    map[base] = c;
-    map[tight] = c;
+    map[slugify(c.name)] = c;
+    map[nameKey(c.name)] = c;
   }
   return map;
 })();

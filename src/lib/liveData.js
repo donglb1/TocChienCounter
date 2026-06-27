@@ -4,12 +4,7 @@
 // - Item: từ backend /api/items (cào lolwildriftbuild.com) → tên + icon Wild Rift thật.
 // - Tướng: metadata suy ra từ DDragon (tags + info) cho tướng mới chưa có trong DB tĩnh.
 
-import { noDiacritics } from "../theme";
-
-// Khóa khớp tên: bỏ dấu + bỏ ký tự không phải chữ/số (chịu được nháy/chấm/khoảng trắng)
-function nameKey(s) {
-  return noDiacritics(s).replace(/[^a-z0-9]/g, "");
-}
+import { nameKey } from "../theme";
 
 // ─── ITEM LIVE ───
 let ITEM_BY_NAME = {}; // nameKey(name) → { slug, name, icon, tier, type }

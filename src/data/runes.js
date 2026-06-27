@@ -37,17 +37,14 @@ export const SPELLS = [
 export const KEYSTONE_CATALOG = KEYSTONES.map((k) => ({ name: k.name, vi: k.vi, for: k.for }));
 export const SPELL_CATALOG = SPELLS.map((s) => ({ name: s.name, vi: s.vi, for: s.for }));
 
-import { noDiacritics } from "../theme";
-function runeKey(s) {
-  return noDiacritics(s).replace(/[^a-z0-9]/g, "");
-}
+import { nameKey } from "../theme";
 export function findKeystone(q) {
-  const n = runeKey(q);
+  const n = nameKey(q);
   if (!n) return null;
-  return KEYSTONES.find((k) => runeKey(k.name) === n || runeKey(k.vi) === n) || null;
+  return KEYSTONES.find((k) => nameKey(k.name) === n || nameKey(k.vi) === n) || null;
 }
 export function findSpell(q) {
-  const n = runeKey(q);
+  const n = nameKey(q);
   if (!n) return null;
-  return SPELLS.find((s) => runeKey(s.name) === n || runeKey(s.vi) === n) || null;
+  return SPELLS.find((s) => nameKey(s.name) === n || nameKey(s.vi) === n) || null;
 }

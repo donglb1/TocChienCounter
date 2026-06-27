@@ -32,6 +32,27 @@ export async function setCached(key, data) {
   } catch (_) {}
 }
 
+// Cache-first resolver dùng chung cho mọi DATA LIVE (version/roster/item catalog).
+// 1) Có cache → apply ngay (hiện data kể cả offline). 2) Còn tươi (< ttl) → bỏ qua mạng.
+// 3) Hết hạn → fetch, apply + ghi cache. 4) Lỗi mạng → giữ cache cũ (nếu có).
+//   fetcher() trả về data hợp lệ, hoặc null/undefined để KHÔNG ghi đè cache.
+export async function cachedResolve(key, ttl, fetcher, apply) {
+  const cached = await getCached(key);
+  if (cached && cached.data != null) apply?.(cached.data);
+  if (cached && Date.now() - cached.fetchedAt < ttl) return cached.data;
+  try {
+    const data = await fetcher();
+    if (data != null) {
+      apply?.(data);
+      setCached(key, data);
+      return data;
+    }
+  } catch (_) {
+    // giữ cache/fallback — không chặn app
+  }
+  return cached ? cached.data : null;
+}
+
 // ───────── Tướng yêu thích ─────────
 export async function getFavorites() {
   try {

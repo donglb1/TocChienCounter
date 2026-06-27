@@ -148,7 +148,7 @@ export const ITEM_CATALOG = ITEMS.map((i) => ({
 }));
 
 // Map slug item (từ web build) → item DB. Khớp dạng "youmuus-ghostblade", "black-cleaver"…
-import { noDiacritics } from "../theme";
+import { noDiacritics, nameKey } from "../theme";
 import { getLiveItemByName, getLiveItemBySlug } from "../lib/liveData";
 
 // Bọc 1 entry item live (từ catalog backend) thành shape giống item DB tĩnh để UI dùng chung.
@@ -193,18 +193,13 @@ export function findItemBySlug(slug) {
   );
 }
 
-// Key so sánh tên: bỏ dấu + bỏ mọi ký tự không phải chữ/số (chịu được nháy typographic, dấu chấm, khoảng trắng)
-function itemKey(s) {
-  return noDiacritics(s).replace(/[^a-z0-9]/g, "");
-}
-
 // Tra item theo tên (Anh hoặc Việt). DB tĩnh trước → catalog live (item mới) → null.
 // Chỉ null khi item KHÔNG có ở cả hai nguồn → UI mới bật ⚠ NGOÀI DS.
 export function findItem(query) {
-  const q = itemKey(query);
+  const q = nameKey(query);
   if (!q) return null;
   return (
-    ITEMS.find((i) => itemKey(i.name) === q || itemKey(i.vi) === q) ||
+    ITEMS.find((i) => nameKey(i.name) === q || nameKey(i.vi) === q) ||
     liveToItem(getLiveItemByName(query)) ||
     null
   );

@@ -83,6 +83,21 @@ export function noDiacritics(str) {
     .trim();
 }
 
+// Khóa so khớp tên: bỏ dấu + bỏ MỌI ký tự không phải chữ/số.
+// Chịu được dấu nháy typographic ('' vs '), dấu chấm, khoảng trắng, "&"…
+// Dùng chung cho item/ngọc/phép/tướng/live catalog → 1 nguồn chuẩn hóa duy nhất.
+export function nameKey(str) {
+  return noDiacritics(str).replace(/[^a-z0-9]/g, "");
+}
+
+// Sinh slug dạng gạch nối (khớp slug web build/tier list). vd "Kha'Zix" → "kha-zix".
+export function slugify(str) {
+  return noDiacritics(str)
+    .replace(/['']/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 // Màu theo loại sát thương để render thanh profile
 export function damageColor(type) {
   if (type === "AD") return C.ad;

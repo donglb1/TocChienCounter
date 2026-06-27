@@ -4,7 +4,8 @@
 // LoL PC (DDragon) rồi ô lục giác ở UI.
 
 import { setLiveChampMeta, getLiveItemByName } from "./liveData";
-import { getCached, setCached } from "./storage";
+import { cachedResolve } from "./storage";
+import { nameKey } from "../theme";
 
 const DATA_TTL = 24 * 60 * 60 * 1000; // 24h: trong TTL thì dùng cache, hết hạn mới fetch lại
 
@@ -34,36 +35,24 @@ const ID_MAP = {
   LeBlanc: "Leblanc",
 };
 
-// Gọi 1 lần khi app mount để lấy version mới nhất. Cache-first: dùng version đã lưu
-// (kể cả offline) rồi chỉ fetch lại khi cache cũ hơn TTL.
+// Gọi 1 lần khi app mount để lấy version mới nhất. Cache-first qua cachedResolve.
 export async function resolveDDragonVersion() {
-  const cached = await getCached("ddragon-version");
-  if (cached && cached.data) DDRAGON_VERSION = cached.data;
-  if (cached && Date.now() - cached.fetchedAt < DATA_TTL) return DDRAGON_VERSION; // còn tươi → bỏ qua mạng
-  try {
-    const res = await fetch(
-      "https://ddragon.leagueoflegends.com/api/versions.json"
-    );
-    const list = await res.json();
-    if (Array.isArray(list) && list[0]) {
-      DDRAGON_VERSION = list[0];
-      setCached("ddragon-version", DDRAGON_VERSION);
-    }
-  } catch (_) {
-    // giữ fallback/cache, không chặn app
-  }
+  await cachedResolve(
+    "ddragon-version",
+    DATA_TTL,
+    async () => {
+      const res = await fetch("https://ddragon.leagueoflegends.com/api/versions.json");
+      const list = await res.json();
+      return Array.isArray(list) && list[0] ? list[0] : null;
+    },
+    (v) => { DDRAGON_VERSION = v; }
+  );
   return DDRAGON_VERSION;
 }
 
 // Map tên tướng → ID Data Dragon (để lấy icon cho TƯỚNG MỚI chưa có trong DB tĩnh).
 let DDRAGON_NAME_MAP = null;
-function normName(s) {
-  return String(s || "")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/['’.\s&]/g, "")
-    .toLowerCase();
-}
+const normName = nameKey; // chuẩn hóa tên chung (bỏ dấu + ký tự đặc biệt)
 // Nạp roster: build name→id map (icon) + metadata (damageType/role) cho tướng mới.
 // Nhận shape rút gọn { [id]: {id, name, tags, info} } — dùng được cho cả cache lẫn fetch live.
 function applyRoster(data) {
@@ -80,28 +69,25 @@ function applyRoster(data) {
 
 // Cache-first: áp roster đã lưu ngay (hiện icon/metadata kể cả offline), chỉ tải lại khi hết TTL.
 export async function resolveChampionRoster() {
-  const cached = await getCached("ddragon-roster");
-  if (cached && cached.data) applyRoster(cached.data);
-  if (cached && Date.now() - cached.fetchedAt < DATA_TTL) return DDRAGON_NAME_MAP; // còn tươi
-  try {
-    if (!DDRAGON_VERSION) await resolveDDragonVersion();
-    const res = await fetch(
-      `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/data/en_US/champion.json`
-    );
-    const json = await res.json();
-    // Rút gọn trước khi lưu: chỉ giữ field thật sự dùng (id/name/tags/info) cho cache nhẹ.
-    const slim = {};
-    for (const k in json.data || {}) {
-      const c = json.data[k];
-      slim[c.id] = { id: c.id, name: c.name, tags: c.tags, info: c.info };
-    }
-    if (Object.keys(slim).length) {
-      applyRoster(slim);
-      setCached("ddragon-roster", slim);
-    }
-  } catch (_) {
-    // không chặn app — đã có cache (nếu có) hoặc fallback chữ
-  }
+  await cachedResolve(
+    "ddragon-roster",
+    DATA_TTL,
+    async () => {
+      if (!DDRAGON_VERSION) await resolveDDragonVersion();
+      const res = await fetch(
+        `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/data/en_US/champion.json`
+      );
+      const json = await res.json();
+      // Rút gọn trước khi lưu: chỉ giữ field thật sự dùng (id/name/tags/info) cho cache nhẹ.
+      const slim = {};
+      for (const k in json.data || {}) {
+        const c = json.data[k];
+        slim[c.id] = { id: c.id, name: c.name, tags: c.tags, info: c.info };
+      }
+      return Object.keys(slim).length ? slim : null;
+    },
+    applyRoster
+  );
   return DDRAGON_NAME_MAP;
 }
 export function ddragonIdByName(name) {

@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image, ScrollView,
 } from "react-native";
-import { C, glow } from "../theme";
+import { C, glow, noDiacritics, slugify } from "../theme";
 import { CHAMPIONS, BUILD_LABELS, findChampion, findChampionBySlug } from "../data/champions";
 import { getChampionBuild } from "../data/buildTemplates";
 import { findItem, findItemBySlug } from "../data/items";
@@ -17,7 +17,7 @@ import { fetchTierList, fetchChampBuild } from "../lib/api";
 
 // slug site cho 1 tướng (ưu tiên slug thật từ tier list; fallback suy từ tên)
 function champToSlug(champ) {
-  return norm(champ.name).replace(/['’.,]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return slugify(champ.name);
 }
 function prettySlug(s) {
   return String(s).split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
@@ -62,9 +62,7 @@ function TierBadge({ tier, big }) {
   );
 }
 
-function norm(s) {
-  return (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
+const norm = noDiacritics; // tìm kiếm không phân biệt dấu
 
 export default function ChampScreen() {
   const [query, setQuery] = useState("");
