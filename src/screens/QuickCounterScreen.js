@@ -3,15 +3,16 @@
 // Tùy chọn: nút AI gợi ý tướng nên pick để khắc đối thủ đó.
 import React, { useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { C, GRAD, LANES, glow } from "../theme";
-import { suggestChampions, findChampion, BUILD_LABELS } from "../data/champions";
+import { findChampion, BUILD_LABELS } from "../data/champions";
 import { championIcon } from "../lib/images";
 import { matchupTips } from "../lib/matchup";
 import { suggestPicks } from "../lib/api";
+import { LanePicker, ChampSearch } from "../components/inputs";
 
 // Tiêu đề mục có icon vector
 function SectionTitle({ icon, children }) {
@@ -31,20 +32,12 @@ const DANGER = {
 
 export default function QuickCounterScreen() {
   const [lane, setLane] = useState(LANES[0]);
-  const [query, setQuery] = useState("");
-  const [suggests, setSuggests] = useState([]);
   const [enemy, setEnemy] = useState(null);
   const [picks, setPicks] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const onQuery = (t) => {
-    setQuery(t);
-    setSuggests(suggestChampions(t));
-  };
   const pick = (c) => {
     setEnemy(c);
-    setQuery("");
-    setSuggests([]);
     setPicks(null);
   };
 
@@ -70,37 +63,13 @@ export default function QuickCounterScreen() {
       <Text style={styles.hint}>Chọn đường và tướng địch cùng đường để xem mẹo khắc chế tức thì.</Text>
 
       <Text style={styles.label}>BẠN ĐI ĐƯỜNG</Text>
-      <View style={styles.laneRow}>
-        {LANES.map((l) => (
-          <TouchableOpacity
-            key={l}
-            style={[styles.laneChip, lane === l && styles.laneChipActive]}
-            onPress={() => setLane(l)}
-          >
-            <Text style={[styles.laneText, lane === l && styles.laneTextActive]}>{l}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <LanePicker value={lane} onChange={setLane} />
 
       <Text style={[styles.label, { marginTop: 18 }]}>TƯỚNG ĐỊCH CÙNG ĐƯỜNG</Text>
-      <TextInput
-        value={query}
-        onChangeText={onQuery}
+      <ChampSearch
+        onPick={pick}
         placeholder={enemy ? `Đang xem: ${enemy.vi} — gõ để đổi…` : "Gõ tên tướng địch…"}
-        placeholderTextColor={C.textFaint}
-        style={styles.input}
       />
-      {suggests.length > 0 && (
-        <View style={styles.suggestBox}>
-          {suggests.map((c) => (
-            <TouchableOpacity key={c.id} style={styles.suggestItem} onPress={() => pick(c)}>
-              <Image source={{ uri: championIcon(c) }} style={styles.suggestAvatar} />
-              <Text style={styles.suggestText}>{c.vi}</Text>
-              <Text style={styles.suggestRole}>{c.role}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
 
       {enemy && tips && (
         <>
@@ -183,23 +152,11 @@ const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: C.bg },
   hint: { color: C.textDim, fontSize: 13, lineHeight: 19, marginBottom: 16 },
   label: { color: C.textDim, fontSize: 12, fontWeight: "800", letterSpacing: 1, marginBottom: 8 },
-  laneRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  laneChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: C.border, backgroundColor: C.card },
-  laneChipActive: { backgroundColor: C.violetDim, borderColor: C.violet, ...glow(C.violet, 14, 0.4) },
-  laneText: { color: C.textDim, fontWeight: "600", fontSize: 13 },
-  laneTextActive: { color: C.text },
-  input: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: C.text, fontSize: 16 },
-  suggestBox: { marginTop: 6, backgroundColor: C.cardAlt, borderRadius: 10, borderWidth: 1, borderColor: C.border, overflow: "hidden" },
-  suggestItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
-  suggestAvatar: { width: 28, height: 28, borderRadius: 6 },
-  suggestText: { color: C.text, fontSize: 15, fontWeight: "600", flex: 1 },
-  suggestRole: { color: C.textFaint, fontSize: 12 },
   enemyHead: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 20, padding: 14, backgroundColor: "#160d14", borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,93,115,0.4)", ...glow(C.red, 20, 0.35) },
   enemyAvatar: { width: 52, height: 52, borderRadius: 11, borderWidth: 1, borderColor: C.red },
   enemyName: { color: C.text, fontSize: 18, fontWeight: "800" },
   enemyMeta: { color: C.textDim, fontSize: 12, marginTop: 3 },
   dangerTag: { fontSize: 11, fontWeight: "800", borderWidth: 1, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
-  section: { color: C.text, fontSize: 13, fontWeight: "900", letterSpacing: 0.5, marginTop: 20, marginBottom: 8 },
   sectionRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 20, marginBottom: 8 },
   sectionTxt: { color: C.text, fontSize: 13, fontWeight: "900", letterSpacing: 0.5 },
   aiBtnRow: { flexDirection: "row", alignItems: "center", gap: 8 },

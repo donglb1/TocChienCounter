@@ -244,8 +244,6 @@ const styles = StyleSheet.create({
   },
   tabIconWrap: { width: 40, height: 30, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   tabIconWrapActive: { backgroundColor: "rgba(168,85,247,0.12)", ...glow(ACCENT, 10, 0.4) },
-  tabIcon: { fontSize: 20, opacity: 0.45 },
-  tabIconActive: { opacity: 1 },
   tabLabel: { color: C.textFaint, fontSize: 11, fontWeight: "700" },
   tabLabelActive: { color: ACCENT },
 });

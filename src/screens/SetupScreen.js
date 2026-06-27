@@ -1,38 +1,29 @@
 // src/screens/SetupScreen.js
 import React, { useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, Image, ActivityIndicator, Alert,
+  View, Text, TouchableOpacity, StyleSheet,
+  ScrollView, Image, Alert,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
-import { C, LANES, glow } from "../theme";
-import { suggestChampions, findChampion } from "../data/champions";
+import { C, LANES } from "../theme";
+import { findChampion } from "../data/champions";
 import { championIcon } from "../lib/images";
 import { extractChampions } from "../lib/api";
 import { Ionicons } from "@expo/vector-icons";
 import GradientButton from "../components/GradientButton";
 import { CornerBrackets } from "../components/neon";
+import { LanePicker, ChampSearch } from "../components/inputs";
 
 const MAX_EDGE = 1568; // resize cạnh dài → đủ rõ để đọc, nhẹ token
 
 export default function SetupScreen({ session, patch, onExtracted, onHistory }) {
   const [champQuery, setChampQuery] = useState(session.champ || "");
-  const [suggests, setSuggests] = useState([]);
   const [lane, setLane] = useState(session.lane || LANES[0]);
   const [imageUri, setImageUri] = useState(session.imageUri || null);
   const [imageBase64, setImageBase64] = useState(null);
   const [mediaType, setMediaType] = useState("image/jpeg");
   const [loading, setLoading] = useState(false);
-
-  const onChampChange = (t) => {
-    setChampQuery(t);
-    setSuggests(suggestChampions(t));
-  };
-  const pickChamp = (c) => {
-    setChampQuery(c.vi);
-    setSuggests([]);
-  };
 
   const pickImage = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -107,42 +98,17 @@ export default function SetupScreen({ session, patch, onExtracted, onHistory }) 
       )}
 
       <Text style={styles.label}>TƯỚNG CỦA BẠN</Text>
-      <View style={styles.champRow}>
-        {champObj && (
-          <Image source={{ uri: championIcon(champObj) }} style={styles.champAvatar} />
-        )}
-        <TextInput
-          value={champQuery}
-          onChangeText={onChampChange}
-          placeholder="Gõ tên tướng…"
-          placeholderTextColor={C.textFaint}
-          style={styles.input}
-        />
-      </View>
-      {suggests.length > 0 && (
-        <View style={styles.suggestBox}>
-          {suggests.map((c) => (
-            <TouchableOpacity key={c.id} style={styles.suggestItem} onPress={() => pickChamp(c)}>
-              <Image source={{ uri: championIcon(c) }} style={styles.suggestAvatar} />
-              <Text style={styles.suggestText}>{c.vi}</Text>
-              <Text style={styles.suggestRole}>{c.role}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
+      <ChampSearch
+        value={champQuery}
+        onChangeText={setChampQuery}
+        onPick={(c) => setChampQuery(c.vi)}
+        clearOnPick={false}
+        placeholder="Gõ tên tướng…"
+        leftAvatar={champObj ? <Image source={{ uri: championIcon(champObj) }} style={styles.champAvatar} /> : null}
+      />
 
       <Text style={[styles.label, { marginTop: 18 }]}>ĐƯỜNG</Text>
-      <View style={styles.laneRow}>
-        {LANES.map((l) => (
-          <TouchableOpacity
-            key={l}
-            style={[styles.laneChip, lane === l && styles.laneChipActive]}
-            onPress={() => setLane(l)}
-          >
-            <Text style={[styles.laneText, lane === l && styles.laneTextActive]}>{l}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <LanePicker value={lane} onChange={setLane} />
 
       <Text style={[styles.label, { marginTop: 18 }]}>ẢNH TEAM ĐỊCH</Text>
       <TouchableOpacity
@@ -178,22 +144,7 @@ const styles = StyleSheet.create({
   historyBtn: { flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-end", marginBottom: 10, paddingVertical: 4 },
   historyText: { color: C.cyan, fontWeight: "700", fontSize: 13 },
   label: { color: C.textDim, fontSize: 12, fontWeight: "800", letterSpacing: 1, marginBottom: 8 },
-  champRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   champAvatar: { width: 40, height: 40, borderRadius: 8, borderWidth: 1, borderColor: C.amberDim },
-  input: {
-    flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
-    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: C.text, fontSize: 16,
-  },
-  suggestBox: { marginTop: 6, backgroundColor: C.cardAlt, borderRadius: 10, borderWidth: 1, borderColor: C.border, overflow: "hidden" },
-  suggestItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
-  suggestAvatar: { width: 28, height: 28, borderRadius: 6 },
-  suggestText: { color: C.text, fontSize: 15, fontWeight: "600", flex: 1 },
-  suggestRole: { color: C.textFaint, fontSize: 12 },
-  laneRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  laneChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: C.border, backgroundColor: C.card },
-  laneChipActive: { backgroundColor: C.violetDim, borderColor: C.violet, ...glow(C.violet, 14, 0.4) },
-  laneText: { color: C.textDim, fontWeight: "600", fontSize: 13 },
-  laneTextActive: { color: C.text },
   imageBox: {
     height: 200, borderRadius: 14, borderWidth: 1, borderColor: C.border,
     backgroundColor: C.card, alignItems: "center", justifyContent: "center", overflow: "hidden", gap: 8,
@@ -202,9 +153,4 @@ const styles = StyleSheet.create({
   preview: { width: "100%", height: "100%" },
   imageHintTitle: { color: C.text, fontWeight: "700", fontSize: 15 },
   imageHint: { color: C.textFaint, textAlign: "center", fontSize: 13, lineHeight: 18 },
-  cta: {
-    marginTop: 22, backgroundColor: C.amber, borderRadius: 12, paddingVertical: 15,
-    alignItems: "center", justifyContent: "center",
-  },
-  ctaText: { color: "#0b1220", fontWeight: "900", fontSize: 15, letterSpacing: 1 },
 });

@@ -1,29 +1,18 @@
 // src/screens/SuggestSetupScreen.js
 // Nhập tay lane + tướng đồng đội + tướng địch (đã lộ ở màn cấm/chọn) → gợi ý tướng nên pick.
 import React, { useState } from "react";
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, Alert,
-} from "react-native";
-import { C, LANES, glow } from "../theme";
-import { suggestChampions, findChampion } from "../data/champions";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Alert } from "react-native";
+import { C, LANES } from "../theme";
+import { findChampion } from "../data/champions";
 import { championIcon } from "../lib/images";
 import GradientButton from "../components/GradientButton";
+import { LanePicker, ChampSearch } from "../components/inputs";
 
 // Khối thêm nhiều tướng (dùng chung cho đồng đội & địch)
 function ChampMultiAdd({ label, accent, list, onAdd, onRemove }) {
-  const [query, setQuery] = useState("");
-  const [suggests, setSuggests] = useState([]);
-
-  const onChange = (t) => {
-    setQuery(t);
-    setSuggests(suggestChampions(t));
-  };
   const add = (c) => {
     if (!list.some((x) => x.name === c.name)) onAdd({ name: c.name, vi: c.vi });
-    setQuery("");
-    setSuggests([]);
   };
-
   return (
     <View style={{ marginTop: 18 }}>
       <Text style={[styles.label, { color: accent }]}>{label} ({list.length})</Text>
@@ -41,24 +30,7 @@ function ChampMultiAdd({ label, accent, list, onAdd, onRemove }) {
           );
         })}
       </View>
-      <TextInput
-        value={query}
-        onChangeText={onChange}
-        placeholder="Gõ tên tướng để thêm…"
-        placeholderTextColor={C.textFaint}
-        style={styles.input}
-      />
-      {suggests.length > 0 && (
-        <View style={styles.suggestBox}>
-          {suggests.map((c) => (
-            <TouchableOpacity key={c.id} style={styles.suggestItem} onPress={() => add(c)}>
-              <Image source={{ uri: championIcon(c) }} style={styles.suggestAvatar} />
-              <Text style={styles.suggestText}>{c.vi}</Text>
-              <Text style={styles.suggestRole}>{c.role}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
+      <ChampSearch onPick={add} placeholder="Gõ tên tướng để thêm…" />
     </View>
   );
 }
@@ -85,17 +57,7 @@ export default function SuggestSetupScreen({ session, patch, onGo }) {
       </Text>
 
       <Text style={styles.label}>BẠN ĐI ĐƯỜNG</Text>
-      <View style={styles.laneRow}>
-        {LANES.map((l) => (
-          <TouchableOpacity
-            key={l}
-            style={[styles.laneChip, lane === l && styles.laneChipActive]}
-            onPress={() => setLane(l)}
-          >
-            <Text style={[styles.laneText, lane === l && styles.laneTextActive]}>{l}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <LanePicker value={lane} onChange={setLane} />
 
       <ChampMultiAdd
         label="ĐỒNG ĐỘI ĐÃ CHỌN"
@@ -130,23 +92,4 @@ const styles = StyleSheet.create({
   chipAvatar: { width: 24, height: 24, borderRadius: 12 },
   chipText: { color: C.text, fontWeight: "600", fontSize: 14 },
   remove: { color: C.textFaint, fontSize: 15, fontWeight: "700" },
-  input: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12, color: C.text, fontSize: 16,
-  },
-  suggestBox: { marginTop: 6, backgroundColor: C.cardAlt, borderRadius: 10, borderWidth: 1, borderColor: C.border, overflow: "hidden" },
-  suggestItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
-  suggestAvatar: { width: 28, height: 28, borderRadius: 6 },
-  suggestText: { color: C.text, fontSize: 15, fontWeight: "600", flex: 1 },
-  suggestRole: { color: C.textFaint, fontSize: 12 },
-  laneRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  laneChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: C.border, backgroundColor: C.card },
-  laneChipActive: { backgroundColor: C.violetDim, borderColor: C.violet, ...glow(C.violet, 14, 0.4) },
-  laneText: { color: C.textDim, fontWeight: "600", fontSize: 13 },
-  laneTextActive: { color: C.text },
-  cta: {
-    marginTop: 26, backgroundColor: C.amber, borderRadius: 12, paddingVertical: 15,
-    alignItems: "center", justifyContent: "center",
-  },
-  ctaText: { color: "#0b1220", fontWeight: "900", fontSize: 15, letterSpacing: 0.5 },
 });
