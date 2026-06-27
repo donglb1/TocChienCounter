@@ -141,7 +141,7 @@ function buildAnalyze({ champ, lane, enemies, champMeta, enemyMeta, metaBuild, i
     ? (enemyMeta || []).map(fmtChamp).join("\n")
     : (enemies || []).map((n) => `- ${n}`).join("\n");
   const me = champMeta ? fmtChamp(champMeta).replace(/^- /, "") : champ;
-  const runeList = (runes || []).map((r) => `- ${r.name} (${r.vi}): ${r.desc}`).join("\n");
+  const runeList = (runes || []).map((r) => `- [${r.tree}] ${r.name} (${r.vi}): ${r.desc}`).join("\n");
   const spellList = (spells || []).map((s) => `- ${s.name} (${s.vi}): ${s.desc}`).join("\n");
   const minorList = fmtMinorRunes(minorRunes);
   const laneLine = laneOpponent
@@ -183,10 +183,10 @@ CÁCH PHÂN TÍCH:
 CHỈ chọn TRANG BỊ trong CATALOG — trả tên tiếng Anh CHÍNH XÁC như trong catalog (không bịa, không đổi dấu nháy):
 ${itemList}
 
-CHỈ chọn NGỌC CHÍNH trong danh sách — trả tên tiếng Anh CHÍNH XÁC như trong danh sách:
+CHỈ chọn NGỌC CHÍNH trong danh sách (mỗi ngọc kèm [Nhánh]) — trả tên tiếng Anh CHÍNH XÁC:
 ${runeList}
 
-NGỌC PHỤ — chọn ĐÚNG 3 ngọc, MỖI NGỌC TỪ 1 NHÁNH KHÁC NHAU, trả ĐÚNG tên tiếng Việt như danh sách:
+NGỌC PHỤ — LUẬT TỐC CHIẾN: chọn ĐÚNG 4 ngọc phụ = 3 ngọc CÙNG NHÁNH với ngọc chính đã chọn + 1 ngọc thuộc MỘT NHÁNH KHÁC. Trả ĐÚNG tên tiếng Việt như danh sách:
 ${minorList}
 
 CHỈ chọn PHÉP trong danh sách — trả tên tiếng Anh CHÍNH XÁC như trong danh sách:
@@ -196,7 +196,7 @@ YÊU CẦU OUTPUT — VIẾT NGẮN GỌN:
 - build ĐÚNG 5 món gồm 1 đôi giày, thứ tự ưu tiên lên đồ. "reason" ≤10 từ.
 - "yourStrengths"/"yourWeaknesses": ≤14 từ mỗi cái. "summary" ≤14 từ. "playstyle" ≤20 từ.
 - "alternatives": ≤1 phương án/món, "condition" ≤6 từ (không cần để []). "mainThreats": tối đa 3.
-- "keystone": 1 ngọc chính; "minorRunes": ĐÚNG 3 ngọc phụ (3 nhánh khác nhau); "spells": ĐÚNG 2 phép. "reason" ≤8 từ.
+- "keystone": 1 ngọc chính; "minorRunes": ĐÚNG 4 ngọc phụ (3 cùng nhánh ngọc chính + 1 nhánh khác); "spells": ĐÚNG 2 phép. "reason" ≤8 từ.
 
 CHỈ trả JSON thuần (không markdown, không \`\`\`):
 {"teamProfile":{"adPercent":0,"apPercent":0,"ccLevel":"none|low|medium|high","hasHealing":false,"mainThreats":[""],"summary":""},"yourStrengths":"","yourWeaknesses":"","keystone":{"name":"","reason":""},"minorRunes":[{"name":"","reason":""}],"spells":[{"name":"","reason":""}],"build":[{"order":1,"item":"","type":"core|boots|situational","reason":"","alternatives":[{"item":"","condition":""}]}],"playstyle":""}`;

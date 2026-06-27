@@ -8,19 +8,19 @@
 
 // ─── NGỌC CHÍNH (Keystone) ───
 export const KEYSTONES = [
-  { name: "Electrocute", vi: "Sốc Điện", desc: "Đánh trúng 1 tướng 3 đòn/kỹ năng trong 3 giây gây thêm sát thương thích ứng. Cho sát thủ/burst." },
-  { name: "Dark Harvest", vi: "Thu Thập Hắc Ám", desc: "Đánh tướng dưới 50% máu gây sát thương thích ứng + cộng dồn vĩnh viễn. Snowball sát thủ." },
-  { name: "Press the Attack", vi: "Cường Lực", desc: "3 đòn liên tiếp lên tướng gây thêm sát thương thích ứng + khuếch đại 9% sát thương lên tướng đó. Cho xạ thủ/đánh thường." },
-  { name: "Lethal Tempo", vi: "Nhịp Độ Chết Người", desc: "Cộng dồn Tốc Độ Đánh khi đánh tướng (tối đa 6); đầy thì thêm tầm đánh + vượt giới hạn tốc đánh. Cho xạ thủ on-hit." },
-  { name: "Phase Rush", vi: "Tăng Tốc Pha", desc: "Trúng tướng 3 lần trong 4 giây → tăng Tốc Chạy + giảm hồi chiêu kỹ năng cơ bản. Để kite/thoát." },
-  { name: "First Strike", vi: "Đòn Phủ Đầu", desc: "Mở giao tranh trước → cho vàng + gây thêm 7% sát thương chuẩn, thưởng vàng theo sát thương. Cho pháp sư cần vàng/snowball." },
-  { name: "Fleet Footwork", vi: "Bước Chân Thần Tốc", desc: "Tích điện khi di chuyển/đánh; đầy 100 thì đòn kế hồi máu + tốc đánh + tốc chạy. Cơ động, trụ kèo." },
-  { name: "Conqueror", vi: "Chinh Phục", desc: "Cộng dồn Sức Mạnh Thích Ứng khi trúng tướng (tối đa 6); đầy thêm Hút Máu Toàn Phần. Cho đấu sĩ kéo dài giao tranh." },
-  { name: "Grasp of the Undying", vi: "Quyền Năng Bất Diệt", desc: "Mỗi 3 giây trong giao tranh, đòn kế cường hóa: +sát thương phép theo máu, hồi máu, +máu vĩnh viễn. Cho đỡ đòn/đấu sĩ (xa giảm 60%)." },
-  { name: "Guardian", vi: "Người Bảo Hộ", desc: "Bảo vệ đồng minh gần/được nhắm; khi nhận sát thương vượt ngưỡng, cả hai nhận lá chắn. Cho hỗ trợ." },
-  { name: "Summon Aery", vi: "Aery", desc: "Đòn đánh/kỹ năng phái Aery gây sát thương địch hoặc che chắn đồng minh. Cho pháp sư poke/enchanter." },
-  { name: "Arcane Comet", vi: "Thiên Thạch Bí Ẩn", desc: "Trúng tướng bằng kỹ năng thả thiên thạch gây sát thương phép; càng trúng càng mạnh. Cho pháp sư poke." },
-  { name: "Glacial Augment", vi: "Bá Chủ Vùng Băng", desc: "Vô hiệu hóa 1 tướng tạo vùng băng làm chậm + tăng chống chịu + nổ sát thương phép. Cho kiểm soát/đỡ đòn." },
+  { name: "Electrocute", vi: "Sốc Điện", tree: "Áp Đảo", desc: "Đánh trúng 1 tướng 3 đòn/kỹ năng trong 3 giây gây thêm sát thương thích ứng. Cho sát thủ/burst." },
+  { name: "Dark Harvest", vi: "Thu Thập Hắc Ám", tree: "Áp Đảo", desc: "Đánh tướng dưới 50% máu gây sát thương thích ứng + cộng dồn vĩnh viễn. Snowball sát thủ." },
+  { name: "Press the Attack", vi: "Cường Lực", tree: "Chuẩn Xác", desc: "3 đòn liên tiếp lên tướng gây thêm sát thương thích ứng + khuếch đại 9% sát thương lên tướng đó. Cho xạ thủ/đánh thường." },
+  { name: "Lethal Tempo", vi: "Nhịp Độ Chết Người", tree: "Chuẩn Xác", desc: "Cộng dồn Tốc Độ Đánh khi đánh tướng (tối đa 6); đầy thì thêm tầm đánh + vượt giới hạn tốc đánh. Cho xạ thủ on-hit." },
+  { name: "Fleet Footwork", vi: "Bước Chân Thần Tốc", tree: "Chuẩn Xác", desc: "Tích điện khi di chuyển/đánh; đầy 100 thì đòn kế hồi máu + tốc đánh + tốc chạy. Cơ động, trụ kèo." },
+  { name: "Conqueror", vi: "Chinh Phục", tree: "Chuẩn Xác", desc: "Cộng dồn Sức Mạnh Thích Ứng khi trúng tướng (tối đa 6); đầy thêm Hút Máu Toàn Phần. Cho đấu sĩ kéo dài giao tranh." },
+  { name: "Grasp of the Undying", vi: "Quyền Năng Bất Diệt", tree: "Kiên Định", desc: "Mỗi 3 giây trong giao tranh, đòn kế cường hóa: +sát thương phép theo máu, hồi máu, +máu vĩnh viễn. Cho đỡ đòn/đấu sĩ (xa giảm 60%)." },
+  { name: "Guardian", vi: "Người Bảo Hộ", tree: "Kiên Định", desc: "Bảo vệ đồng minh gần/được nhắm; khi nhận sát thương vượt ngưỡng, cả hai nhận lá chắn. Cho hỗ trợ." },
+  { name: "Summon Aery", vi: "Aery", tree: "Pháp Thuật", desc: "Đòn đánh/kỹ năng phái Aery gây sát thương địch hoặc che chắn đồng minh. Cho pháp sư poke/enchanter." },
+  { name: "Arcane Comet", vi: "Thiên Thạch Bí Ẩn", tree: "Pháp Thuật", desc: "Trúng tướng bằng kỹ năng thả thiên thạch gây sát thương phép; càng trúng càng mạnh. Cho pháp sư poke." },
+  { name: "First Strike", vi: "Đòn Phủ Đầu", tree: "Pháp Thuật", desc: "Mở giao tranh trước → cho vàng + gây thêm 7% sát thương chuẩn, thưởng vàng theo sát thương. Cho pháp sư cần vàng/snowball." },
+  { name: "Phase Rush", vi: "Tăng Tốc Pha", tree: "Pháp Thuật", desc: "Trúng tướng 3 lần trong 4 giây → tăng Tốc Chạy + giảm hồi chiêu kỹ năng cơ bản. Để kite/thoát." },
+  { name: "Glacial Augment", vi: "Bá Chủ Vùng Băng", tree: "Pháp Thuật", desc: "Vô hiệu hóa 1 tướng tạo vùng băng làm chậm + tăng chống chịu + nổ sát thương phép. Cho kiểm soát/đỡ đòn." },
 ];
 
 // ─── NGỌC PHỤ (theo 4 nhánh) ───
@@ -84,7 +84,7 @@ export const SPELLS = [
   { name: "Smite", vi: "Trừng Phạt", desc: "Sát thương chuẩn lên quái/lính. Cho đi rừng kiểm soát mục tiêu lớn." },
 ];
 
-export const KEYSTONE_CATALOG = KEYSTONES.map((k) => ({ name: k.name, vi: k.vi, desc: k.desc }));
+export const KEYSTONE_CATALOG = KEYSTONES.map((k) => ({ name: k.name, vi: k.vi, tree: k.tree, desc: k.desc }));
 export const MINOR_RUNE_CATALOG = MINOR_RUNES.map((r) => ({ vi: r.vi, tree: r.tree, desc: r.desc }));
 export const SPELL_CATALOG = SPELLS.map((s) => ({ name: s.name, vi: s.vi, desc: s.desc }));
 

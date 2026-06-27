@@ -19,7 +19,9 @@ export default function RuneDetailModal({ data, onClose }) {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.name}>{data.vi || data.name}</Text>
                   {data.vi && data.vi !== data.name ? <Text style={styles.enName}>{data.name}</Text> : null}
-                  <Text style={styles.kind}>{KIND_LABEL[data.kind] || "Ngọc"}</Text>
+                  <Text style={styles.kind}>
+                    {KIND_LABEL[data.kind] || "Ngọc"}{data.kind === "minor" && data.tree ? ` · Nhánh ${data.tree}` : ""}
+                  </Text>
                 </View>
                 <TouchableOpacity onPress={onClose} hitSlop={10}>
                   <Ionicons name="close" size={22} color={C.textFaint} />
