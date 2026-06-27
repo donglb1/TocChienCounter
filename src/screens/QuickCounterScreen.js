@@ -11,9 +11,10 @@ import { C, GRAD, LANES, glow } from "../theme";
 import { findChampion, BUILD_LABELS } from "../data/champions";
 import { championIcon, itemIcon } from "../lib/images";
 import { matchupTips, counterItems } from "../lib/matchup";
-import { suggestPicks } from "../lib/api";
+import { suggestPicks, analyzeBuild } from "../lib/api";
 import { LanePicker, ChampSearch } from "../components/inputs";
 import ItemDetailModal from "../components/ItemDetailModal";
+import ResultScreen from "./ResultScreen";
 
 // Tiêu đề mục có icon vector
 function SectionTitle({ icon, children }) {
@@ -37,10 +38,33 @@ export default function QuickCounterScreen() {
   const [picks, setPicks] = useState(null);
   const [loading, setLoading] = useState(false);
   const [detailItem, setDetailItem] = useState(null);
+  const [busyName, setBusyName] = useState(null); // tướng đang phân tích build
+  const [buildSession, setBuildSession] = useState(null); // build khắc chế của tướng đã chọn
 
   const pick = (c) => {
     setEnemy(c);
     setPicks(null);
+    setBuildSession(null);
+  };
+
+  // Chạm 1 tướng khắc chế → phân tích build khắc chế đối thủ rồi mở màn kết quả (như luồng Đội hình).
+  const choosePick = async (p) => {
+    const champ = findChampion(p.name);
+    if (!champ || !enemy) return;
+    setBusyName(p.name);
+    try {
+      const build = await analyzeBuild({ champ: champ.name, lane, enemies: [enemy.name] });
+      setBuildSession({
+        champ: champ.vi,
+        lane,
+        enemies: [{ name: enemy.name, displayName: enemy.vi, confidence: "high" }],
+        build,
+      });
+    } catch (e) {
+      setPicks([{ name: "", tier: "", reason: "Lỗi: " + String(e.message || e), counters: [] }]);
+    } finally {
+      setBusyName(null);
+    }
   };
 
   const tips = enemy ? matchupTips(enemy) : null;
@@ -60,6 +84,17 @@ export default function QuickCounterScreen() {
       setLoading(false);
     }
   };
+
+  // Đã chọn 1 tướng khắc chế → hiện build đầy đủ (tái dùng màn kết quả). Quay lại = bỏ build.
+  if (buildSession) {
+    return (
+      <ResultScreen
+        session={buildSession}
+        onRestart={() => setBuildSession(null)}
+        onEditEnemies={() => setBuildSession(null)}
+      />
+    );
+  }
 
   return (
     <ScrollView style={styles.wrap} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
@@ -158,10 +193,18 @@ export default function QuickCounterScreen() {
           {picks && picks.length > 0 && (
             <View style={{ marginTop: 12 }}>
               <SectionTitle icon="locate">NÊN PICK</SectionTitle>
+              <Text style={styles.pickHint}>Chạm 1 tướng để xem build khắc chế {enemy.vi}.</Text>
               {picks.map((p, i) => {
                 const champ = findChampion(p.name);
+                const busy = busyName === p.name;
                 return (
-                  <View key={i} style={styles.pickRow}>
+                  <TouchableOpacity
+                    key={i}
+                    style={styles.pickRow}
+                    activeOpacity={0.85}
+                    onPress={() => champ && choosePick(p)}
+                    disabled={!champ || !!busyName}
+                  >
                     {champ && <Image source={{ uri: championIcon(champ) }} style={styles.pickAvatar} />}
                     <View style={{ flex: 1 }}>
                       <Text style={styles.pickName}>
@@ -169,7 +212,8 @@ export default function QuickCounterScreen() {
                       </Text>
                       {p.reason ? <Text style={styles.pickReason}>{p.reason}</Text> : null}
                     </View>
-                  </View>
+                    {busy ? <ActivityIndicator color={C.amber} /> : champ ? <Text style={styles.pickChevron}>›</Text> : null}
+                  </TouchableOpacity>
                 );
               })}
             </View>
@@ -209,6 +253,8 @@ const styles = StyleSheet.create({
   pickName: { color: C.text, fontSize: 15, fontWeight: "700" },
   pickTier: { color: C.amber, fontWeight: "900" },
   pickReason: { color: C.textDim, fontSize: 12, marginTop: 2 },
+  pickHint: { color: C.textFaint, fontSize: 12, marginBottom: 8 },
+  pickChevron: { color: C.textFaint, fontSize: 24, fontWeight: "300" },
   ctrRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderRadius: 10, borderWidth: 1, borderColor: C.border, padding: 8, marginBottom: 7 },
   ctrIcon: { width: 36, height: 36, borderRadius: 8, backgroundColor: C.cardAlt },
   ctrIconFallback: { alignItems: "center", justifyContent: "center" },
