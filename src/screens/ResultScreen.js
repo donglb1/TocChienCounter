@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { findItem } from "../data/items";
 import { findKeystone, findSpell } from "../data/runes";
 import { itemIcon } from "../lib/images";
+import { useLiveData } from "../lib/liveData";
 
 // Màu gem theo loại item (fallback khi không có icon CDN)
 const GEM = {
@@ -24,6 +25,7 @@ function abbrev(name) {
 }
 
 function ItemGem({ name }) {
+  useLiveData(); // re-render khi catalog item Wild Rift về (icon/tên thật)
   const item = findItem(name);
   const known = !!item;
   const vi = known ? item.vi : name;

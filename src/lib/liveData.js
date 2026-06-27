@@ -4,7 +4,30 @@
 // - Item: từ backend /api/items (cào lolwildriftbuild.com) → tên + icon Wild Rift thật.
 // - Tướng: metadata suy ra từ DDragon (tags + info) cho tướng mới chưa có trong DB tĩnh.
 
+import { useSyncExternalStore } from "react";
 import { nameKey } from "../theme";
+
+// ─── PUB/SUB ───
+// Data live nạp bất đồng bộ (cache rồi mạng). Component đã render TRƯỚC khi data về
+// sẽ không tự cập nhật icon/tên nếu chỉ đọc biến module. Ta phát tín hiệu thay đổi
+// qua version + listeners để useLiveData() ép re-render đúng lúc.
+let VERSION = 0;
+const listeners = new Set();
+function notify() {
+  VERSION++;
+  for (const l of listeners) l();
+}
+function subscribe(cb) {
+  listeners.add(cb);
+  return () => listeners.delete(cb);
+}
+function getVersion() {
+  return VERSION;
+}
+// Hook: trả về VERSION hiện tại; tăng mỗi khi catalog/roster cập nhật → component re-render.
+export function useLiveData() {
+  return useSyncExternalStore(subscribe, getVersion);
+}
 
 // ─── ITEM LIVE ───
 let ITEM_BY_NAME = {}; // nameKey(name) → { slug, name, icon, tier, type }
@@ -37,6 +60,7 @@ export function setLiveItems(list) {
   ITEM_BY_NAME = byName;
   ITEM_BY_SLUG = bySlug;
   ITEM_COUNT = Object.keys(bySlug).length;
+  notify();
   return ITEM_COUNT;
 }
 
@@ -85,6 +109,7 @@ export function setLiveChampMeta(raw) {
     };
   }
   CHAMP_META = map;
+  notify();
   return Object.keys(map).length;
 }
 

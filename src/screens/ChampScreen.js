@@ -12,6 +12,7 @@ import { findItem, findItemBySlug } from "../data/items";
 import { findKeystone, findSpell } from "../data/runes";
 import { Ionicons } from "@expo/vector-icons";
 import { championIcon, itemIcon, ddragonIdByName } from "../lib/images";
+import { useLiveData } from "../lib/liveData";
 import { getFavorites, toggleFavorite } from "../lib/storage";
 import { fetchTierList, fetchChampBuild } from "../lib/api";
 
@@ -65,6 +66,7 @@ function TierBadge({ tier, big }) {
 const norm = noDiacritics; // tìm kiếm không phân biệt dấu
 
 export default function ChampScreen() {
+  const liveVer = useLiveData(); // roster/icon tướng mới phụ thuộc DDragon live
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState(null);
   const [favs, setFavs] = useState([]);
@@ -115,7 +117,7 @@ export default function ChampScreen() {
       });
     }
     return extra.length ? [...CHAMPIONS, ...extra] : CHAMPIONS;
-  }, [tierRaw]);
+  }, [tierRaw, liveVer]);
 
   const hasTiers = Object.keys(tierMap).length > 0;
   const onToggleFav = async (id) => setFavs(await toggleFavorite(id));
@@ -241,6 +243,7 @@ export default function ChampScreen() {
 }
 
 function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
+  useLiveData(); // re-render khi catalog item về (icon/tên item trong build)
   const tpl = getChampionBuild(champ); // build mẫu offline (theo archetype)
   const [live, setLive] = useState(null); // build thật cào theo patch
   const dmgColor = champ.damageType === "AP" ? C.ap : champ.damageType === "AD" ? C.ad : C.textDim;
