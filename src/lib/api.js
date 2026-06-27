@@ -7,9 +7,9 @@
 
 import { repairJson } from "./repairJson";
 import { itemCatalogForDamage } from "../data/items";
-import { CHAMPION_ALLOWLIST, findChampion, BUILD_LABELS } from "../data/champions";
+import { CHAMPION_ALLOWLIST, findChampion, findChampionBySlug, championSlug, BUILD_LABELS } from "../data/champions";
 import { KEYSTONE_CATALOG, SPELL_CATALOG } from "../data/runes";
-import { setLiveItems, getLiveChampMeta } from "./liveData";
+import { setLiveItems, getLiveChampMeta, getLiveItemBySlug } from "./liveData";
 import { cachedResolve } from "./storage";
 
 const ITEM_CATALOG_TTL = 24 * 60 * 60 * 1000; // 24h
@@ -66,9 +66,36 @@ export async function extractChampions({ imageBase64, mediaType, champ, lane }) 
   return parsed; // { userTeam, enemyChampions:[{name,displayName,confidence}], allyChampions, overallConfidence, notes }
 }
 
+// Đổi list slug item (từ build live) → tên item thật để AI đọc được. Slug lạ → bỏ.
+function slugsToItemNames(slugs) {
+  return (slugs || [])
+    .map((s) => getLiveItemBySlug(s)?.name)
+    .filter(Boolean);
+}
+
+// Lấy build THỰC TẾ theo patch của tướng người chơi làm "mỏ neo" đồ lõi cho AI.
+// Cào lỗi / chưa nạp catalog item → trả null (AI tự suy từ đặc tính như cũ). KHÔNG chặn phân tích.
+async function fetchAnchorBuild(champName) {
+  try {
+    const slug = championSlug(champName);
+    if (!slug) return null;
+    const b = await fetchChampBuild(slug);
+    if (!b || !b.ok) return null;
+    const anchor = {
+      core: slugsToItemNames(b.core),
+      boots: slugsToItemNames(b.boots),
+      situational: slugsToItemNames(b.situational),
+    };
+    return anchor.core.length || anchor.boots.length ? anchor : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 // Phân tích team địch → build + ngọc + phép khắc chế
 export async function analyzeBuild({ champ, lane, enemies, laneOpponent }) {
   const meta = champMeta(champ); // đặc tính tướng người chơi (gồm damageType)
+  const metaBuild = await fetchAnchorBuild(champ); // build chuẩn patch (mỏ neo đồ lõi)
   const res = await fetch(`${BACKEND_URL}/api/analyze`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -80,6 +107,7 @@ export async function analyzeBuild({ champ, lane, enemies, laneOpponent }) {
       laneOpponent: laneOpponent || null, // tướng đối lane trực tiếp (build sớm bám matchup)
       champMeta: meta,
       enemyMeta: (enemies || []).map(champMeta), // đặc tính từng tướng địch
+      metaBuild, // build chuẩn patch hiện tại (cào live) → AI giữ làm gốc, chỉ đổi để khắc chế
       runes: KEYSTONE_CATALOG, // catalog ngọc + khi nào dùng
       spells: SPELL_CATALOG, // catalog phép bổ trợ + khi nào dùng
       // Catalog item LỌC theo hệ sát thương tướng → bớt token, AI vẫn đủ item counter
@@ -93,8 +121,25 @@ export async function analyzeBuild({ champ, lane, enemies, laneOpponent }) {
   return parsed; // { teamProfile, build:[...], playstyle }
 }
 
+// Lấy tier list rồi map → { tên tướng (Anh): tier } để AI bám meta hiện tại.
+// Cào lỗi → trả {} (AI gợi ý theo lý thuyết khắc chế như cũ). KHÔNG chặn gợi ý.
+async function fetchMetaTiers() {
+  try {
+    const data = await fetchTierList();
+    const out = {};
+    for (const e of data.list || []) {
+      const c = findChampionBySlug(e.slug) || findChampion(e.name);
+      if (c && e.tier) out[c.name] = e.tier;
+    }
+    return out;
+  } catch (_) {
+    return {};
+  }
+}
+
 // Gợi ý tướng nên chọn — xét cả đồng đội (allies) lẫn địch (enemies) theo đường
 export async function suggestPicks({ lane, enemies, allies }) {
+  const metaTiers = await fetchMetaTiers(); // tier meta hiện tại (cào live) → ưu tiên tướng đang mạnh
   const res = await fetch(`${BACKEND_URL}/api/analyze`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -106,6 +151,7 @@ export async function suggestPicks({ lane, enemies, allies }) {
       allyMeta: (allies || []).map(champMeta), // đặc tính đồng đội → bù vai trò
       enemyMeta: (enemies || []).map(champMeta), // đặc tính địch → chọn khắc chế
       allowlist: CHAMPION_ALLOWLIST, // ép model chỉ gợi ý tướng thật
+      metaTiers, // tier hiện tại từng tướng → bám meta thay vì chỉ lý thuyết
     }),
   });
   if (!res.ok) throw new Error(`Backend lỗi ${res.status}: ${await safeText(res)}`);

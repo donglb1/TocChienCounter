@@ -29,6 +29,12 @@ export function useLiveData() {
   return useSyncExternalStore(subscribe, getVersion);
 }
 
+// Wild Rift gắn tiền tố nhánh tiến hóa "Ruin - " / "Light - " vào tên item
+// (vd "Ruin - Infinity Edge"). Bỏ tiền tố để khớp với tên gốc trong DB tĩnh ("Infinity Edge").
+function stripBranch(s) {
+  return String(s || "").replace(/^\s*(ruin|light|chaos|order|holy|fallen)\s*[-–]\s*/i, "");
+}
+
 // ─── ITEM LIVE ───
 let ITEM_BY_NAME = {}; // nameKey(name) → { slug, name, icon, tier, type }
 let ITEM_BY_SLUG = {}; // slug → { slug, name, icon, tier, type }
@@ -47,14 +53,16 @@ export function setLiveItems(list) {
   const bySlug = {};
   for (const it of list || []) {
     if (!it || !it.name) continue;
+    const cleanName = stripBranch(it.name);
     const entry = {
       slug: it.slug,
-      name: it.name,
+      name: cleanName, // bỏ tiền tố "Ruin -"/"Light -" cho tên hiển thị gọn
       icon: it.icon || null,
       tier: it.tier || null,
       type: inferItemType(it.slug, it.tier),
     };
-    byName[nameKey(it.name)] = entry;
+    byName[nameKey(it.name)] = entry; // khóa theo tên đầy đủ
+    byName[nameKey(cleanName)] = entry; // và theo tên đã bỏ tiền tố → khớp DB tĩnh + icon WR
     if (it.slug) bySlug[it.slug] = entry;
   }
   ITEM_BY_NAME = byName;

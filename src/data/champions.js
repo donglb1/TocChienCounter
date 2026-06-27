@@ -101,7 +101,7 @@ export const CHAMPIONS = [
   { id: "Jayce",        name: "Jayce",         vi: "Jayce",         damageType: "mixed", role: "Fighter",  burst: true,  cc: "medium", healing: false, threat: 7 },
   { id: "Riven",        name: "Riven",         vi: "Riven",         damageType: "AD",    role: "Fighter",  burst: true,  cc: "medium", healing: false, threat: 8 },
   { id: "Pantheon",     name: "Pantheon",      vi: "Pantheon",      damageType: "AD",    role: "Fighter",  burst: true,  cc: "medium", healing: false, threat: 7 },
-  { id: "MonkeyKing",   name: "Wukong",        vi: "Wukong",        damageType: "AD",    role: "Fighter",  burst: true,  cc: "high",   healing: false, threat: 7 },
+  { id: "MonkeyKing",   name: "Wukong",        vi: "Ngộ Không",     damageType: "AD",    role: "Fighter",  burst: true,  cc: "high",   healing: false, threat: 7 },
   { id: "XinZhao",      name: "Xin Zhao",      vi: "Xin Zhao",      damageType: "AD",    role: "Fighter",  burst: true,  cc: "medium", healing: false, threat: 7 },
   { id: "Vi",           name: "Vi",            vi: "Vi",            damageType: "AD",    role: "Fighter",  burst: true,  cc: "high",   healing: false, threat: 7 },
   { id: "Tryndamere",   name: "Tryndamere",    vi: "Tryndamere",    damageType: "AD",    role: "Fighter",  burst: false, cc: "low",    healing: true,  threat: 8 },
@@ -308,6 +308,12 @@ export function findChampionBySlug(slug) {
   const s = String(slug).toLowerCase();
   if (SLUG_ALIAS[s]) return findChampion(SLUG_ALIAS[s]);
   return SLUG_MAP[s] || SLUG_MAP[s.replace(/-/g, "")] || null;
+}
+
+// Tên tướng → slug site (dùng để fetch build thực tế theo patch, vd "Kha'Zix" → "kha-zix").
+// Khớp logic slug của site lolwildriftbuild.com (bỏ dấu nháy/chấm, dấu cách → gạch).
+export function championSlug(name) {
+  return noDiacritics(name).replace(/['’.,]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
 // Gợi ý autocomplete (prefix match, tối đa `limit`)

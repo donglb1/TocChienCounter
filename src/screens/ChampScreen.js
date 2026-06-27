@@ -272,8 +272,9 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
   const sourceLabel = usingLive ? "Cập nhật theo patch hiện tại" : tpl ? "Build mẫu (offline)" : null;
 
   return (
-    <ScrollView style={styles.wrap} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-      <View style={styles.detailTop}>
+    <View style={styles.wrap}>
+      {/* Thanh back CỐ ĐỊNH (ngoài ScrollView) → vuốt nội dung không chạm trúng nút back */}
+      <View style={styles.detailTopBar}>
         <TouchableOpacity onPress={onBack} hitSlop={8} style={styles.backBtn}>
           <Text style={styles.backText}>← Danh sách tướng</Text>
         </TouchableOpacity>
@@ -283,6 +284,7 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
         </TouchableOpacity>
       </View>
 
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 40 }}>
       <View style={styles.head}>
         <ChampAvatar champ={champ} style={styles.headAvatar} />
         <View style={{ flex: 1 }}>
@@ -360,7 +362,8 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
       )}
 
       <ItemDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -447,6 +450,11 @@ const styles = StyleSheet.create({
   starOn: { color: C.amber },
   empty: { color: C.textDim, textAlign: "center", marginTop: 30 },
   detailTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  detailTopBar: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10,
+    borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: C.bg,
+  },
   backBtn: {},
   backText: { color: C.cyan, fontWeight: "700", fontSize: 14 },
   head: { flexDirection: "row", gap: 14, alignItems: "center", marginBottom: 8 },

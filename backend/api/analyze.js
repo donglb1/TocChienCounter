@@ -14,8 +14,13 @@ const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const EXTRACT_MODEL = "claude-sonnet-4-6"; // đọc ảnh — nhanh, vẫn chính xác tốt
 const ANALYZE_MODEL = "claude-sonnet-4-6"; // phân tích text — nhanh + rẻ
 
-// Ép phản hồi nhanh: không suy nghĩ sâu, effort thấp (hợp task trả JSON có cấu trúc)
+// Ép phản hồi nhanh: không suy nghĩ sâu, effort thấp (hợp task trả JSON có cấu trúc).
+// Dùng cho EXTRACT (đọc ảnh) và SUGGEST (chọn tướng trong danh sách) — task phân loại, ít suy luận.
 const FAST = { thinking: { type: "disabled" }, output_config: { effort: "low" } };
+
+// ANALYZE là suy luận đa biến (tổng hợp profile địch → cân điểm mạnh/yếu → chọn build có thứ tự + lý do).
+// effort "medium" cho chất lượng build tốt hơn rõ rệt; đánh đổi ~1-2s là đáng vì đây là giá trị cốt lõi.
+const ANALYZE_CFG = { thinking: { type: "disabled" }, output_config: { effort: "medium" } };
 
 export default async function handler(req, res) {
   // CORS (Expo Go / web gọi cross-origin)
@@ -126,7 +131,7 @@ CHỈ trả JSON thuần (không markdown, không \`\`\`):
 }
 
 // ───────────────────────── ANALYZE (text) ─────────────────────────
-function buildAnalyze({ champ, lane, enemies, champMeta, enemyMeta, items, runes, spells, laneOpponent }) {
+function buildAnalyze({ champ, lane, enemies, champMeta, enemyMeta, metaBuild, items, runes, spells, laneOpponent }) {
   // Catalog item kèm THUỘC TÍNH → AI chọn dựa dữ liệu thật, không đoán theo trí nhớ
   const itemList = (items || [])
     .map((i) => `- ${i.name} (${i.vi}) [${i.type}]: ${i.desc}`)
@@ -141,19 +146,33 @@ function buildAnalyze({ champ, lane, enemies, champMeta, enemyMeta, items, runes
     ? `ĐỐI THỦ CÙNG ĐƯỜNG (ưu tiên build SỚM bám matchup này): ${laneOpponent}`
     : `ĐỐI THỦ CÙNG ĐƯỜNG: chưa rõ — tự suy từ vai trò địch ở "${lane}".`;
 
+  // Mỏ neo build chuẩn patch (cào live). Có thì AI giữ làm gốc, chỉ đổi món để khắc chế + nêu lý do.
+  const mb = metaBuild || {};
+  const anchorBits = [
+    (mb.core || []).length ? `Đồ lõi: ${mb.core.join(", ")}` : null,
+    (mb.boots || []).length ? `Giày: ${mb.boots.join(", ")}` : null,
+    (mb.situational || []).length ? `Tình huống hay gặp: ${mb.situational.join(", ")}` : null,
+  ].filter(Boolean);
+  const anchorBlock = anchorBits.length
+    ? `\nBUILD CHUẨN PATCH HIỆN TẠI của tướng này (meta thực tế — GIỮ làm gốc, CHỈ đổi/thêm món để khắc chế đội địch và NÊU lý do khi lệch khỏi gốc):\n${anchorBits.map((b) => `- ${b}`).join("\n")}\n`
+    : "";
+
   const prompt = `Bạn là HLV Tốc Chiến (Wild Rift) chuyên nghiệp. Phân tích ĐIỂM MẠNH/YẾU của cả 2 đội dựa
 trên ĐẶC TÍNH được cung cấp, rồi đề xuất build + ngọc + phép KHẮC CHẾ tối ưu cho tướng người chơi.
 
+⚠ ĐÂY LÀ LIÊN MINH: TỐC CHIẾN (Wild Rift) — KHÔNG phải LMHT PC. Tên item, chỉ số, hệ trang bị tiến hóa
+khác hẳn bản PC. TUYỆT ĐỐI chỉ dùng item/ngọc/phép trong CATALOG bên dưới, không lấy theo trí nhớ LMHT PC.
+
 TƯỚNG NGƯỜI CHƠI (${lane}): ${me}
 ${laneLine}
-
+${anchorBlock}
 TEAM ĐỊCH (đặc tính từng tướng):
 ${enemyList}
 
 CÁCH PHÂN TÍCH:
-1. Tổng hợp profile địch: tỷ lệ sát thương AD/AP, mức CC, có hồi máu không, ai là mối đe dọa lớn nhất.
+1. Tổng hợp profile địch: ước lượng THÔ tỷ lệ sát thương AD/AP (2 số cộng ~100, không cần chính xác tuyệt đối), mức CC, có hồi máu không, ai là mối đe dọa lớn nhất.
 2. Điểm MẠNH tướng người chơi cần phát huy + điểm YẾU cần che (dựa "cách lên đồ", tầm đánh, spike).
-3. Chọn ĐỒ LÕI bám đúng "cách lên đồ đặc trưng" của tướng người chơi (vd AD chí mạng -> Vô Cực Kiếm; AP burst -> Mũ Rabadon/Vọng Âm Luden), rồi thêm món KHẮC CHẾ theo MÔ TẢ THUỘC TÍNH:
+3. Chọn ĐỒ LÕI bám "cách lên đồ đặc trưng" của tướng + BUILD CHUẨN PATCH ở trên (nếu có), rồi thêm/đổi món KHẮC CHẾ theo MÔ TẢ THUỘC TÍNH trong catalog:
    - Địch nghiêng AP -> món kháng phép (mr). Nghiêng AD -> giáp (armor) + giảm tốc đánh.
    - Địch có hồi máu/hút máu -> BẮT BUỘC 1 món Vết Thương Sâu (grievous).
    - Sát thủ burst -> đồ cứu mạng (revive/shield/stasis). Nhiều CC -> kháng hiệu ứng (tenacity).
@@ -180,14 +199,19 @@ CHỈ trả JSON thuần (không markdown, không \`\`\`):
   return {
     model: ANALYZE_MODEL,
     max_tokens: 1400,
-    ...FAST,
+    ...ANALYZE_CFG,
     messages: [{ role: "user", content: prompt }],
   };
 }
 
 // ───────────────────────── SUGGEST (gợi ý tướng nên chọn) ─────────────────────────
-function buildSuggest({ lane, enemies, allyMeta, enemyMeta, allowlist }) {
-  const list = (allowlist || []).join(", ");
+function buildSuggest({ lane, enemies, allyMeta, enemyMeta, allowlist, metaTiers }) {
+  // Gắn tier meta hiện tại vào tên tướng (vd "Yasuo [S+]") để AI ưu tiên tướng đang mạnh.
+  // Tướng không có tier → để trơn. Model vẫn trả tên gốc (phần trước dấu []).
+  const tiers = metaTiers || {};
+  const list = (allowlist || [])
+    .map((n) => (tiers[n] ? `${n} [${tiers[n]}]` : n))
+    .join(", ");
   const allyList = (allyMeta || []).length
     ? (allyMeta || []).map(fmtChamp).join("\n")
     : "- (chưa chọn tướng nào)";
@@ -212,9 +236,10 @@ CÁCH PHÂN TÍCH (dựa trên đặc tính trên, không đoán):
 NGUYÊN TẮC:
 - Bù vai trò: đội thiếu chống chịu -> tướng đỡ đòn; thiếu mở giao tranh -> tướng CC mở; lệch 1 loại sát thương -> cân bằng lại. KHÔNG trùng vai trò đã có.
 - Khắc chế: nhiều AP -> tướng kháng phép/lì phép; nhiều AD -> tướng giáp/đỡ đòn; địch hồi máu -> tướng gây Vết Thương Sâu/burst; nhiều CC -> tướng cơ động/kháng hiệu ứng.
+- BÁM META: nhãn [S+]/[S]/[A+]/[A]... là tier mạnh-yếu patch hiện tại. Khi 2 tướng ngang nhau về khắc chế/bù vai trò, ƯU TIÊN tướng tier cao hơn. Tướng không có nhãn = chưa rõ tier, không phải yếu.
 - Chỉ gợi ý tướng HỢP đường "${lane}", KHÔNG trùng tướng 2 đội đã chọn.
 
-QUAN TRỌNG — CHỈ chọn tướng trong danh sách sau (không bịa tướng ngoài danh sách), trả ĐÚNG tên tiếng Anh trong danh sách:
+QUAN TRỌNG — CHỈ chọn tướng trong danh sách sau (không bịa tướng ngoài danh sách). Trả ĐÚNG tên tiếng Anh, BỎ nhãn tier trong "[]" (vd "Yasuo [S+]" -> trả "Yasuo"):
 ${list}
 
 YÊU CẦU OUTPUT — VIẾT CỰC NGẮN (giảm độ dài = trả nhanh hơn):
