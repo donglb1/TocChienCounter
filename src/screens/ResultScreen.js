@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from "rea
 import { C } from "../theme";
 import { Ionicons } from "@expo/vector-icons";
 import { findItem } from "../data/items";
-import { findKeystone, findSpell } from "../data/runes";
+import { findKeystone, findSpell, findRune } from "../data/runes";
 import { itemIcon } from "../lib/images";
 import { useLiveData } from "../lib/liveData";
 import ItemDetailModal from "../components/ItemDetailModal";
@@ -150,10 +150,10 @@ export default function ResultScreen({
               key={`m${i}`}
               style={styles.rsRow}
               activeOpacity={0.7}
-              onPress={() => setDetailRune({ ...(findKeystone(r.name) || { name: r.name }), kind: "minor" })}
+              onPress={() => setDetailRune({ ...(findRune(r.name) || { name: r.name }), kind: "minor" })}
             >
               <Text style={[styles.rsBadge, styles.rsBadgeMinor]}>NGỌC PHỤ</Text>
-              <Text style={styles.rsName}>{keystoneName(r.name)}</Text>
+              <Text style={styles.rsName}>{(findRune(r.name) || {}).vi || r.name}</Text>
               {r.reason ? <Text style={styles.rsReason}>· {r.reason}</Text> : null}
               <Ionicons name="information-circle-outline" size={15} color={C.textFaint} />
             </TouchableOpacity>

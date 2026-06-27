@@ -8,7 +8,7 @@
 import { repairJson } from "./repairJson";
 import { itemCatalogForDamage, findItemBySlug } from "../data/items";
 import { CHAMPION_ALLOWLIST, findChampion, findChampionBySlug, championSlug, BUILD_LABELS } from "../data/champions";
-import { KEYSTONE_CATALOG, SPELL_CATALOG } from "../data/runes";
+import { KEYSTONE_CATALOG, MINOR_RUNE_CATALOG, SPELL_CATALOG } from "../data/runes";
 import { setLiveItems, getLiveChampMeta } from "./liveData";
 import { cachedResolve, getCached, setCached } from "./storage";
 
@@ -108,8 +108,9 @@ export async function analyzeBuild({ champ, lane, enemies, laneOpponent }) {
       champMeta: meta,
       enemyMeta: (enemies || []).map(champMeta), // đặc tính từng tướng địch
       metaBuild, // build chuẩn patch hiện tại (cào live) → AI giữ làm gốc, chỉ đổi để khắc chế
-      runes: KEYSTONE_CATALOG, // catalog ngọc + khi nào dùng
-      spells: SPELL_CATALOG, // catalog phép bổ trợ + khi nào dùng
+      runes: KEYSTONE_CATALOG, // catalog ngọc chính
+      minorRunes: MINOR_RUNE_CATALOG, // catalog ngọc phụ (4 nhánh) → AI gợi ý 3 ngọc phụ
+      spells: SPELL_CATALOG, // catalog phép bổ trợ
       // Catalog item LỌC theo hệ sát thương tướng → bớt token, AI vẫn đủ item counter
       items: itemCatalogForDamage(meta?.dmg),
     }),

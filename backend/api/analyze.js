@@ -132,7 +132,7 @@ CHỈ trả JSON thuần (không markdown, không \`\`\`):
 }
 
 // ───────────────────────── ANALYZE (text) ─────────────────────────
-function buildAnalyze({ champ, lane, enemies, champMeta, enemyMeta, metaBuild, items, runes, spells, laneOpponent }) {
+function buildAnalyze({ champ, lane, enemies, champMeta, enemyMeta, metaBuild, items, runes, minorRunes, spells, laneOpponent }) {
   // Catalog item kèm THUỘC TÍNH → AI chọn dựa dữ liệu thật, không đoán theo trí nhớ
   const itemList = (items || [])
     .map((i) => `- ${i.name} (${i.vi}) [${i.type}]: ${i.desc}`)
@@ -141,8 +141,9 @@ function buildAnalyze({ champ, lane, enemies, champMeta, enemyMeta, metaBuild, i
     ? (enemyMeta || []).map(fmtChamp).join("\n")
     : (enemies || []).map((n) => `- ${n}`).join("\n");
   const me = champMeta ? fmtChamp(champMeta).replace(/^- /, "") : champ;
-  const runeList = (runes || []).map((r) => `- ${r.name} (${r.vi}): ${r.for}`).join("\n");
-  const spellList = (spells || []).map((s) => `- ${s.name} (${s.vi}): ${s.for}`).join("\n");
+  const runeList = (runes || []).map((r) => `- ${r.name} (${r.vi}): ${r.desc}`).join("\n");
+  const spellList = (spells || []).map((s) => `- ${s.name} (${s.vi}): ${s.desc}`).join("\n");
+  const minorList = fmtMinorRunes(minorRunes);
   const laneLine = laneOpponent
     ? `ĐỐI THỦ CÙNG ĐƯỜNG (ưu tiên build SỚM bám matchup này): ${laneOpponent}`
     : `ĐỐI THỦ CÙNG ĐƯỜNG: chưa rõ — tự suy từ vai trò địch ở "${lane}".`;
@@ -182,8 +183,11 @@ CÁCH PHÂN TÍCH:
 CHỈ chọn TRANG BỊ trong CATALOG — trả tên tiếng Anh CHÍNH XÁC như trong catalog (không bịa, không đổi dấu nháy):
 ${itemList}
 
-CHỈ chọn NGỌC trong danh sách — trả tên tiếng Anh CHÍNH XÁC như trong danh sách:
+CHỈ chọn NGỌC CHÍNH trong danh sách — trả tên tiếng Anh CHÍNH XÁC như trong danh sách:
 ${runeList}
+
+NGỌC PHỤ — chọn ĐÚNG 3 ngọc, MỖI NGỌC TỪ 1 NHÁNH KHÁC NHAU, trả ĐÚNG tên tiếng Việt như danh sách:
+${minorList}
 
 CHỈ chọn PHÉP trong danh sách — trả tên tiếng Anh CHÍNH XÁC như trong danh sách:
 ${spellList}
@@ -192,10 +196,10 @@ YÊU CẦU OUTPUT — VIẾT NGẮN GỌN:
 - build ĐÚNG 5 món gồm 1 đôi giày, thứ tự ưu tiên lên đồ. "reason" ≤10 từ.
 - "yourStrengths"/"yourWeaknesses": ≤14 từ mỗi cái. "summary" ≤14 từ. "playstyle" ≤20 từ.
 - "alternatives": ≤1 phương án/món, "condition" ≤6 từ (không cần để []). "mainThreats": tối đa 3.
-- "keystone": 1 ngọc; "spells": ĐÚNG 2 phép. "reason" của ngọc/phép ≤8 từ.
+- "keystone": 1 ngọc chính; "minorRunes": ĐÚNG 3 ngọc phụ (3 nhánh khác nhau); "spells": ĐÚNG 2 phép. "reason" ≤8 từ.
 
 CHỈ trả JSON thuần (không markdown, không \`\`\`):
-{"teamProfile":{"adPercent":0,"apPercent":0,"ccLevel":"none|low|medium|high","hasHealing":false,"mainThreats":[""],"summary":""},"yourStrengths":"","yourWeaknesses":"","keystone":{"name":"","reason":""},"spells":[{"name":"","reason":""}],"build":[{"order":1,"item":"","type":"core|boots|situational","reason":"","alternatives":[{"item":"","condition":""}]}],"playstyle":""}`;
+{"teamProfile":{"adPercent":0,"apPercent":0,"ccLevel":"none|low|medium|high","hasHealing":false,"mainThreats":[""],"summary":""},"yourStrengths":"","yourWeaknesses":"","keystone":{"name":"","reason":""},"minorRunes":[{"name":"","reason":""}],"spells":[{"name":"","reason":""}],"build":[{"order":1,"item":"","type":"core|boots|situational","reason":"","alternatives":[{"item":"","condition":""}]}],"playstyle":""}`;
 
   return {
     model: ANALYZE_MODEL,
@@ -212,8 +216,8 @@ function buildChampBuild({ champ, lane, champMeta, items, runes, spells }) {
   const itemList = (items || [])
     .map((i) => `- ${i.name} (${i.vi}) [${i.type}]: ${i.desc}`)
     .join("\n");
-  const runeList = (runes || []).map((r) => `- ${r.name} (${r.vi}): ${r.for}`).join("\n");
-  const spellList = (spells || []).map((s) => `- ${s.name} (${s.vi}): ${s.for}`).join("\n");
+  const runeList = (runes || []).map((r) => `- ${r.name} (${r.vi}): ${r.desc}`).join("\n");
+  const spellList = (spells || []).map((s) => `- ${s.name} (${s.vi}): ${s.desc}`).join("\n");
   const me = champMeta ? fmtChamp(champMeta).replace(/^- /, "") : champ;
 
   const prompt = `Bạn là HLV Tốc Chiến (Wild Rift) chuyên nghiệp. Đề xuất BỘ TRANG BỊ TIÊU CHUẨN, tối ưu nhất
@@ -309,6 +313,15 @@ CHỈ trả JSON thuần (không markdown, không \`\`\`):
     ...FAST,
     messages: [{ role: "user", content: prompt }],
   };
+}
+
+// Gom ngọc phụ theo nhánh cho prompt → AI dễ chọn 3 ngọc từ 3 nhánh khác nhau.
+function fmtMinorRunes(minorRunes) {
+  const byTree = {};
+  for (const r of minorRunes || []) (byTree[r.tree] = byTree[r.tree] || []).push(r);
+  return Object.entries(byTree)
+    .map(([tree, rs]) => `[Nhánh ${tree}]\n` + rs.map((r) => `- ${r.vi}: ${r.desc}`).join("\n"))
+    .join("\n");
 }
 
 // Định dạng 1 dòng đặc tính tướng cho prompt (grounding). Tướng lạ → ghi rõ chưa rõ đặc tính.

@@ -88,7 +88,7 @@ export const BUILD_TEMPLATES = {
     boots: "Mercury's Treads",
     core: ["Sunfire Aegis", "Winter's Approach", "Dead Man's Plate"],
     situational: ["Thornmail", "Force of Nature", "Abyssal Mask", "Warmog's Armor"],
-    keystone: "Aftershock",
+    keystone: "Grasp of the Undying",
     spells: ["Flash", "Ghost"],
     note: "Mở giao tranh, hứng đòn cho đội. Lên Giáp Gai/Giáp Thiên Nhiên theo sát thương địch.",
   },

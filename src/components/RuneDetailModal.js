@@ -25,8 +25,8 @@ export default function RuneDetailModal({ data, onClose }) {
                   <Ionicons name="close" size={22} color={C.textFaint} />
                 </TouchableOpacity>
               </View>
-              {data.for ? (
-                <Text style={styles.desc}>{data.for}</Text>
+              {data.desc ? (
+                <Text style={styles.desc}>{data.desc}</Text>
               ) : (
                 <Text style={styles.descDim}>Chưa có mô tả cho ngọc/phép này.</Text>
               )}
