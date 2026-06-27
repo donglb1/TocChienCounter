@@ -13,6 +13,7 @@ import { findKeystone, findSpell } from "../data/runes";
 import { Ionicons } from "@expo/vector-icons";
 import { championIcon, itemIcon, ddragonIdByName } from "../lib/images";
 import { useLiveData } from "../lib/liveData";
+import ItemDetailModal from "../components/ItemDetailModal";
 import { getFavorites, toggleFavorite } from "../lib/storage";
 import { fetchTierList, fetchChampBuild } from "../lib/api";
 
@@ -244,6 +245,7 @@ export default function ChampScreen() {
 
 function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
   useLiveData(); // re-render khi catalog item về (icon/tên item trong build)
+  const [detailItem, setDetailItem] = useState(null);
   const tpl = getChampionBuild(champ); // build mẫu offline (theo archetype)
   const [live, setLive] = useState(null); // build thật cào theo patch
   const dmgColor = champ.damageType === "AP" ? C.ap : champ.damageType === "AD" ? C.ad : C.textDim;
@@ -320,18 +322,18 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
           {boots.length > 0 && (
             <>
               <Text style={styles.subLabel}>GIÀY & PHÙ PHÉP</Text>
-              {boots.map((it, i) => <ItemRow key={`b${i}`} name={it} />)}
+              {boots.map((it, i) => <ItemRow key={`b${i}`} name={it} onPress={setDetailItem} />)}
             </>
           )}
 
           <Text style={styles.subLabel}>CỐT LÕI (lên trước)</Text>
-          {core.map((it, i) => <ItemRow key={`c${i}`} name={it} order={i + 1} />)}
+          {core.map((it, i) => <ItemRow key={`c${i}`} name={it} order={i + 1} onPress={setDetailItem} />)}
 
           {situational.length > 0 && (
             <>
               <Text style={styles.subLabel}>TÙY TÌNH HUỐNG</Text>
               <View style={styles.sitWrap}>
-                {situational.map((it, i) => <ItemChip key={`s${i}`} name={it} />)}
+                {situational.map((it, i) => <ItemChip key={`s${i}`} name={it} onPress={setDetailItem} />)}
               </View>
             </>
           )}
@@ -356,16 +358,22 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
           )}
         </>
       )}
+
+      <ItemDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
     </ScrollView>
   );
 }
 
-function ItemRow({ name, order }) {
+function ItemRow({ name, order, onPress }) {
   const item = findItem(name);
   const icon = item ? itemIcon(item) : null;
   const vi = item ? item.vi : name;
   return (
-    <View style={styles.itemRow}>
+    <TouchableOpacity
+      style={styles.itemRow}
+      activeOpacity={item ? 0.7 : 1}
+      onPress={() => item && onPress?.(item)}
+    >
       {order ? (
         <View style={styles.orderBadge}><Text style={styles.orderText}>{order}</Text></View>
       ) : (
@@ -379,13 +387,17 @@ function ItemRow({ name, order }) {
         </View>
       )}
       <Text style={styles.itemName}>{vi}</Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 
-function ItemChip({ name }) {
+function ItemChip({ name, onPress }) {
   const item = findItem(name);
-  return <Text style={styles.sitChip}>{item ? item.vi : name}</Text>;
+  return (
+    <TouchableOpacity activeOpacity={item ? 0.7 : 1} onPress={() => item && onPress?.(item)}>
+      <Text style={styles.sitChip}>{item ? item.vi : name}</Text>
+    </TouchableOpacity>
+  );
 }
 
 function keystoneName(n) {

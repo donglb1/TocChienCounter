@@ -7,6 +7,7 @@ import { findItem } from "../data/items";
 import { findKeystone, findSpell } from "../data/runes";
 import { itemIcon } from "../lib/images";
 import { useLiveData } from "../lib/liveData";
+import ItemDetailModal from "../components/ItemDetailModal";
 
 // Màu gem theo loại item (fallback khi không có icon CDN)
 const GEM = {
@@ -24,7 +25,7 @@ function abbrev(name) {
   return (name || "?").slice(0, 2).toUpperCase();
 }
 
-function ItemGem({ name }) {
+function ItemGem({ name, onPress }) {
   useLiveData(); // re-render khi catalog item Wild Rift về (icon/tên thật)
   const item = findItem(name);
   const known = !!item;
@@ -32,7 +33,11 @@ function ItemGem({ name }) {
   const color = known ? GEM[item.type] || GEM.core : "#555";
   const icon = known ? itemIcon(item) : null;
   return (
-    <View style={styles.gemWrap}>
+    <TouchableOpacity
+      style={styles.gemWrap}
+      activeOpacity={known ? 0.7 : 1}
+      onPress={() => known && onPress?.(item)}
+    >
       {icon ? (
         <Image source={{ uri: icon }} style={styles.gemImg} />
       ) : (
@@ -47,11 +52,12 @@ function ItemGem({ name }) {
           <Text style={styles.outBadge}>NGOÀI DS</Text>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 
 export default function ResultScreen({ session, onRestart, onEditEnemies }) {
+  const [detailItem, setDetailItem] = React.useState(null);
   const b = session.build || {};
   const profile = b.teamProfile || {};
   const ad = clamp(profile.adPercent);
@@ -144,7 +150,7 @@ export default function ResultScreen({ session, onRestart, onEditEnemies }) {
             <View style={styles.orderBadge}>
               <Text style={styles.orderText}>{step.order || i + 1}</Text>
             </View>
-            <ItemGem name={step.item} />
+            <ItemGem name={step.item} onPress={setDetailItem} />
             {step.type ? <Text style={styles.typeTag}>{typeText(step.type)}</Text> : null}
           </View>
           {step.reason ? <Text style={styles.reason}>{step.reason}</Text> : null}
@@ -176,6 +182,8 @@ export default function ResultScreen({ session, onRestart, onEditEnemies }) {
           <Text style={styles.primaryText}>Phân tích trận mới</Text>
         </TouchableOpacity>
       </View>
+
+      <ItemDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
     </ScrollView>
   );
 }
