@@ -56,7 +56,13 @@ function ItemGem({ name, onPress }) {
   );
 }
 
-export default function ResultScreen({ session, onRestart, onEditEnemies }) {
+export default function ResultScreen({
+  session,
+  onRestart,
+  onEditEnemies,
+  restartLabel = "Phân tích trận mới",
+  editLabel = "Sửa team địch",
+}) {
   const [detailItem, setDetailItem] = React.useState(null);
   const b = session.build || {};
   const profile = b.teamProfile || {};
@@ -176,10 +182,10 @@ export default function ResultScreen({ session, onRestart, onEditEnemies }) {
 
       <View style={styles.actions}>
         <TouchableOpacity style={styles.secondary} onPress={onEditEnemies}>
-          <Text style={styles.secondaryText}>Sửa team địch</Text>
+          <Text style={styles.secondaryText}>{editLabel}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.primary} onPress={onRestart}>
-          <Text style={styles.primaryText}>Phân tích trận mới</Text>
+          <Text style={styles.primaryText}>{restartLabel}</Text>
         </TouchableOpacity>
       </View>
 

@@ -92,6 +92,8 @@ export default function QuickCounterScreen() {
         session={buildSession}
         onRestart={() => setBuildSession(null)}
         onEditEnemies={() => setBuildSession(null)}
+        restartLabel="Chọn tướng khác"
+        editLabel="← Quay lại"
       />
     );
   }
