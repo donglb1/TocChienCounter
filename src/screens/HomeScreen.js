@@ -14,6 +14,7 @@ import { CornerBrackets } from "../components/neon";
 import { useNews } from "../lib/newsContext";
 import { tapSelection } from "../lib/haptics";
 import { NewsSkeleton } from "../components/Skeleton";
+import PatchWatchCard from "../components/PatchWatchCard";
 
 // "2026-05-27T09:00:00Z" → "27/05/2026"
 function fmtDate(iso) {
@@ -24,7 +25,7 @@ function fmtDate(iso) {
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
-export default function HomeScreen() {
+export default function HomeScreen({ patch, newPatch }) {
   const { news, fallbackUrl, loading, error, reload } = useNews();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -91,6 +92,7 @@ export default function HomeScreen() {
       data={news}
       keyExtractor={(it, i) => `${it.url}-${i}`}
       renderItem={renderItem}
+      ListHeaderComponent={<PatchWatchCard patch={patch} isNew={!!newPatch} />}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.amber} />
       }

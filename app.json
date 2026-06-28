@@ -37,7 +37,13 @@
       ]
     },
     "plugins": [
-      "expo-image-picker"
+      "expo-image-picker",
+      [
+        "expo-notifications",
+        {
+          "color": "#a855f7"
+        }
+      ]
     ],
     "extra": {
       "eas": {

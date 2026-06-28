@@ -12,6 +12,7 @@ import { resolveDDragonVersion, resolveChampionRoster } from "./src/lib/images";
 import { useVersionCheck } from "./src/lib/useVersionCheck";
 import { resolveItemCatalog } from "./src/lib/api";
 import { NewsProvider, useNews } from "./src/lib/newsContext";
+import { usePatchWatch } from "./src/lib/patchWatch";
 import ErrorBoundary from "./src/components/ErrorBoundary";
 import { tapSelection } from "./src/lib/haptics";
 import HomeScreen from "./src/screens/HomeScreen";
@@ -22,6 +23,7 @@ import PickScreen from "./src/screens/PickScreen";
 import SuggestSetupScreen from "./src/screens/SuggestSetupScreen";
 import ChampScreen from "./src/screens/ChampScreen";
 import BanScreen from "./src/screens/BanScreen";
+import DraftScreen from "./src/screens/DraftScreen";
 import QuickCounterScreen from "./src/screens/QuickCounterScreen";
 import HistoryScreen from "./src/screens/HistoryScreen";
 
@@ -29,6 +31,7 @@ const TABS = [
   { key: "home", label: "Tin tức", set: "ion", icon: "newspaper-outline", iconActive: "newspaper" },
   { key: "champ", label: "Tướng", set: "ion", icon: "library-outline", iconActive: "library" },
   { key: "ban", label: "Cấm", set: "ion", icon: "ban-outline", iconActive: "ban" },
+  { key: "draft", label: "Draft", set: "ion", icon: "git-compare-outline", iconActive: "git-compare" },
   { key: "counter", label: "1v1", set: "mci", icon: "sword-cross", iconActive: "sword-cross" },
   { key: "build", label: "Build", set: "ion", icon: "construct-outline", iconActive: "construct" },
   { key: "suggest", label: "Đội hình", set: "ion", icon: "people-outline", iconActive: "people" },
@@ -62,6 +65,7 @@ function AppShell() {
 
   useVersionCheck();
   const { patch } = useNews(); // news fetch 1 lần ở NewsProvider, dùng chung với HomeScreen
+  const newPatch = usePatchWatch(patch); // phát hiện patch mới → badge + thông báo cục bộ
   useEffect(() => {
     resolveDDragonVersion().then(() => resolveChampionRoster());
     resolveItemCatalog(); // nạp catalog item Wild Rift (tên + icon thật) tự bám patch
@@ -71,6 +75,7 @@ function AppShell() {
     if (tab === "home") return "Tin tức";
     if (tab === "champ") return "Thư viện tướng";
     if (tab === "ban") return "Đề xuất cấm";
+    if (tab === "draft") return "Mô phỏng draft";
     if (tab === "counter") return "Khắc chế 1v1";
     if (tab === "build") {
       return buildScreen === "setup" ? "1 · Thiết lập"
@@ -115,9 +120,10 @@ function AppShell() {
         </LinearGradient>
 
         <View style={styles.content}>
-          {tab === "home" && <HomeScreen />}
+          {tab === "home" && <HomeScreen patch={patch} newPatch={newPatch} />}
           {tab === "champ" && <ChampScreen />}
           {tab === "ban" && <BanScreen />}
+          {tab === "draft" && <DraftScreen />}
           {tab === "counter" && <QuickCounterScreen />}
 
           {tab === "build" && buildScreen === "setup" && (
