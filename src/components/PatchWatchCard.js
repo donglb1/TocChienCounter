@@ -9,7 +9,6 @@ import { CHAMPIONS } from "../data/champions";
 import { championIcon } from "../lib/images";
 import { getNotifyEnabled, setNotifyEnabled } from "../lib/patchWatch";
 import { getFavorites } from "../lib/storage";
-import { tapSelection } from "../lib/haptics";
 
 export default function PatchWatchCard({ patch, isNew }) {
   const [notify, setNotify] = useState(true);
@@ -21,7 +20,6 @@ export default function PatchWatchCard({ patch, isNew }) {
   }, []);
 
   const onToggle = (val) => {
-    tapSelection();
     setNotify(val);
     setNotifyEnabled(val);
   };

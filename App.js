@@ -14,7 +14,6 @@ import { resolveItemCatalog } from "./src/lib/api";
 import { NewsProvider, useNews } from "./src/lib/newsContext";
 import { usePatchWatch } from "./src/lib/patchWatch";
 import ErrorBoundary from "./src/components/ErrorBoundary";
-import { tapSelection } from "./src/lib/haptics";
 import HomeScreen from "./src/screens/HomeScreen";
 import SetupScreen from "./src/screens/SetupScreen";
 import ConfirmScreen from "./src/screens/ConfirmScreen";
@@ -212,7 +211,7 @@ function AppShell() {
               <TouchableOpacity
                 key={t.key}
                 style={styles.tabItem}
-                onPress={() => { if (!active) tapSelection(); setTab(t.key); }}
+                onPress={() => setTab(t.key)}
                 activeOpacity={0.7}
               >
                 {active && <View style={styles.tabAccent} />}

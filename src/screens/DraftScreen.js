@@ -16,7 +16,6 @@ import { useLiveData } from "../lib/liveData";
 import { fetchTierList } from "../lib/api";
 import { analyzeAllies } from "../lib/draftAnalysis";
 import { DRAFT_STEPS, suggestBans, suggestPicks, tierOf } from "../lib/draftSim";
-import { tapImpact, tapSelection, tapNotify } from "../lib/haptics";
 
 const TEAM_META = {
   ally: { label: "MÌNH", color: C.green, ban: "BẠN CẤM", pick: "BẠN CHỌN" },
@@ -64,20 +63,16 @@ export default function DraftScreen() {
     if (done || used.has(champ.id)) return;
     bucketSetter(cur)((arr) => [...arr, champ]);
     setStep((s) => s + 1);
-    if (step + 1 >= DRAFT_STEPS.length) tapNotify("success");
-    else tapImpact("light");
   };
 
   const undo = () => {
     if (step === 0) return;
-    tapSelection();
     const prev = DRAFT_STEPS[step - 1];
     bucketSetter(prev)((arr) => arr.slice(0, -1));
     setStep((s) => s - 1);
   };
 
   const reset = () => {
-    tapSelection();
     setStep(0); setBansAlly([]); setBansEnemy([]); setPicksAlly([]); setPicksEnemy([]);
   };
 

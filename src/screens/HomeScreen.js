@@ -12,7 +12,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { C } from "../theme";
 import { CornerBrackets } from "../components/neon";
 import { useNews } from "../lib/newsContext";
-import { tapSelection } from "../lib/haptics";
 import { NewsSkeleton } from "../components/Skeleton";
 import PatchWatchCard from "../components/PatchWatchCard";
 
@@ -39,7 +38,6 @@ export default function HomeScreen({ patch, newPatch }) {
   // Lỗi (vd URL không hợp lệ) → rơi về trình duyệt hệ thống cho chắc.
   const open = (url) => {
     if (!url) return;
-    tapSelection();
     WebBrowser.openBrowserAsync(url, {
       toolbarColor: C.bg,
       controlsColor: C.amber,

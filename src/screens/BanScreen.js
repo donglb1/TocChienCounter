@@ -15,7 +15,6 @@ import { useLiveData } from "../lib/liveData";
 import { useNews } from "../lib/newsContext";
 import { fetchTierList, fetchWrStats } from "../lib/api";
 import { metaBanList, metaBanListFromStats } from "../lib/draftAnalysis";
-import { tapSelection } from "../lib/haptics";
 import { BanSkeleton } from "../components/Skeleton";
 
 const ROLE_VI = { Tank: "Đỡ đòn", Fighter: "Đấu sĩ", Mage: "Pháp sư", Assassin: "Sát thủ", Marksman: "Xạ thủ", Support: "Hỗ trợ" };
@@ -150,7 +149,7 @@ export default function BanScreen() {
                 <TouchableOpacity
                   key={l.key}
                   style={[styles.laneChip, on && styles.laneChipOn]}
-                  onPress={() => { if (!on) tapSelection(); setLaneFilter(l.key); }}
+                  onPress={() => setLaneFilter(l.key)}
                 >
                   <Text style={[styles.laneChipText, on && styles.laneChipTextOn]}>{l.label}</Text>
                 </TouchableOpacity>

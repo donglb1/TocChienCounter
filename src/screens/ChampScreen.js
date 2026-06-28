@@ -17,7 +17,6 @@ import ItemDetailModal from "../components/ItemDetailModal";
 import RuneDetailModal from "../components/RuneDetailModal";
 import { getFavorites, toggleFavorite } from "../lib/storage";
 import { fetchTierList, aiChampionBuild, getCachedAiBuild } from "../lib/api";
-import { tapSelection } from "../lib/haptics";
 
 // slug site cho 1 tướng (ưu tiên slug thật từ tier list; fallback suy từ tên)
 function champToSlug(champ) {
@@ -130,7 +129,7 @@ export default function ChampScreen() {
   }, [tierRaw, liveVer]);
 
   const hasTiers = Object.keys(tierMap).length > 0;
-  const onToggleFav = async (id) => { tapSelection(); setFavs(await toggleFavorite(id)); };
+  const onToggleFav = async (id) => setFavs(await toggleFavorite(id));
   // tier của tướng (DB tĩnh tra qua tierMap[id]; tướng mới giữ tier trong chính object)
   const tierOf = (c) => tierMap[c.id] || c.tier;
   const slugOf = (c) => slugMap[c.id] || c.slug || champToSlug(c);
@@ -199,7 +198,7 @@ export default function ChampScreen() {
                   <TouchableOpacity
                     key={l.key}
                     style={[styles.laneChip, on && styles.laneChipOn]}
-                    onPress={() => { if (!on) tapSelection(); setLaneFilter(l.key); }}
+                    onPress={() => setLaneFilter(l.key)}
                   >
                     <Text style={[styles.laneChipText, on && styles.laneChipTextOn]}>{l.label}</Text>
                   </TouchableOpacity>
@@ -208,10 +207,10 @@ export default function ChampScreen() {
             </View>
             <View style={styles.sortRow}>
               <Text style={styles.sortLabel}>Sắp xếp:</Text>
-              <TouchableOpacity onPress={() => { if (sortMode !== "az") tapSelection(); setSortMode("az"); }}>
+              <TouchableOpacity onPress={() => setSortMode("az")}>
                 <Text style={[styles.sortOpt, sortMode === "az" && styles.sortOptOn]}>A–Z</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => { if (sortMode !== "tier") tapSelection(); setSortMode("tier"); }}>
+              <TouchableOpacity onPress={() => setSortMode("tier")}>
                 <Text style={[styles.sortOpt, sortMode === "tier" && styles.sortOptOn]}>Theo tier</Text>
               </TouchableOpacity>
             </View>
