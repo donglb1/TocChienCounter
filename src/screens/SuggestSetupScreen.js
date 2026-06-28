@@ -8,7 +8,7 @@ import { findChampion } from "../data/champions";
 import { championIcon } from "../lib/images";
 import GradientButton from "../components/GradientButton";
 import { LanePicker, ChampSearch } from "../components/inputs";
-import { analyzeAllies, banSuggestions } from "../lib/draftAnalysis";
+import { analyzeAllies } from "../lib/draftAnalysis";
 
 // Khối thêm nhiều tướng (dùng chung cho đồng đội & địch)
 function ChampMultiAdd({ label, accent, list, onAdd, onRemove }) {
@@ -42,9 +42,8 @@ export default function SuggestSetupScreen({ session, patch, onGo }) {
   const [allies, setAllies] = useState(session.allies || []);
   const [enemies, setEnemies] = useState(session.enemies || []);
 
-  // Phân tích offline tức thì (không tốn API): profile đội mình + gợi ý ban địch.
+  // Phân tích offline tức thì (không tốn API): profile đội mình (gợi ý ban → tab "Cấm").
   const teamProfile = useMemo(() => analyzeAllies(allies), [allies]);
-  const bans = useMemo(() => banSuggestions(enemies), [enemies]);
 
   const run = () => {
     if (enemies.length === 0 && allies.length === 0) {
@@ -80,22 +79,6 @@ export default function SuggestSetupScreen({ session, patch, onGo }) {
         onAdd={(c) => setEnemies((e) => [...e, c])}
         onRemove={(idx) => setEnemies((e) => e.filter((_, i) => i !== idx))}
       />
-
-      {bans.length > 0 && (
-        <View style={styles.banCard}>
-          <View style={styles.banHead}>
-            <Ionicons name="ban" size={15} color={C.red} />
-            <Text style={styles.banTitle}>NÊN BAN</Text>
-          </View>
-          {bans.map(({ champ, threat }) => (
-            <View key={champ.id} style={styles.banRow}>
-              <Image source={{ uri: championIcon(champ) }} style={styles.banAvatar} />
-              <Text style={styles.banName}>{champ.vi}</Text>
-              <Text style={styles.banThreat}>Nguy hiểm {threat}/10</Text>
-            </View>
-          ))}
-        </View>
-      )}
 
       {teamProfile.count >= 2 && (
         <View style={styles.teamCard}>
@@ -134,14 +117,7 @@ const styles = StyleSheet.create({
   chipAvatar: { width: 24, height: 24, borderRadius: 12 },
   chipText: { color: C.text, fontWeight: "600", fontSize: 14 },
   remove: { color: C.textFaint, fontSize: 15, fontWeight: "700" },
-  banCard: { marginTop: 22, backgroundColor: "#1a0f12", borderRadius: 13, borderWidth: 1, borderColor: "rgba(255,93,115,0.35)", padding: 14 },
-  banHead: { flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 10 },
-  banTitle: { color: C.red, fontSize: 12, fontWeight: "800", letterSpacing: 1 },
-  banRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 },
-  banAvatar: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, borderColor: C.red },
-  banName: { color: C.text, fontSize: 15, fontWeight: "700", flex: 1 },
-  banThreat: { color: C.red, fontSize: 12, fontWeight: "700" },
-  teamCard: { marginTop: 16, backgroundColor: C.card, borderRadius: 13, borderWidth: 1, borderColor: C.border, padding: 14 },
+  teamCard: { marginTop: 22, backgroundColor: C.card, borderRadius: 13, borderWidth: 1, borderColor: C.border, padding: 14 },
   teamTitle: { color: C.textDim, fontSize: 12, fontWeight: "800", letterSpacing: 1, marginBottom: 10 },
   bar: { flexDirection: "row", height: 12, borderRadius: 6, overflow: "hidden", backgroundColor: C.bgAlt },
   barSeg: { height: "100%" },

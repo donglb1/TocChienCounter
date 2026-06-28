@@ -15,7 +15,7 @@ và cập nhật tin tức/tier list/build **tự bám theo patch**.
 | **Cấm** | `BanScreen` | Đề xuất tướng **nên ban theo meta**: trộn tier list hiện tại (sức mạnh thực tế patch) + độ nguy hiểm (threat) trong DB → xếp hạng ưu tiên cấm, lọc theo đường. Offline → xếp theo độ nguy hiểm. |
 | **1v1** | `QuickCounterScreen` | Tra khắc chế đối lane tức thì (offline): đồ mua sớm + mẹo đi đường. Nút AI gợi ý tướng pick để khắc đối thủ. |
 | **Build** | `Setup → Confirm → Result` | Chọn tướng + đường → chụp ảnh team địch → AI đọc tướng → xác nhận/sửa tay → build khắc chế từng bước có lý do + phương án thay thế. Có lịch sử phân tích. |
-| **Đội hình** | `SuggestSetup → Pick → Result` | Nhập đồng đội + địch ở màn cấm/chọn → gợi ý tướng nên pick. Phân tích offline tức thì: profile AD/AP đội mình, lỗ hổng vai trò, gợi ý **ban** theo độ nguy hiểm. |
+| **Đội hình** | `SuggestSetup → Pick → Result` | Nhập đồng đội + địch ở màn cấm/chọn → gợi ý tướng nên pick. Phân tích offline tức thì: profile AD/AP đội mình, lỗ hổng vai trò. |
 
 Chạm bất kỳ **trang bị** nào (màn Build / Thư viện) → xem chi tiết: tên Việt/Anh, loại, mô tả thuộc tính.
 
@@ -40,7 +40,7 @@ toc-chien-counter/
 │   │   ├── liveData.js          # store reactive (useSyncExternalStore) cho catalog/roster live
 │   │   ├── storage.js           # AsyncStorage: cache TTL (cachedResolve), yêu thích, lịch sử
 │   │   ├── newsContext.js       # fetch tin tức 1 lần, dùng chung header + HomeScreen
-│   │   ├── draftAnalysis.js     # phân tích đội hình offline (profile + gợi ý ban) + xếp hạng ban theo meta
+│   │   ├── draftAnalysis.js     # phân tích đội hình offline (profile đội) + xếp hạng ban theo meta
 │   │   ├── matchup.js           # mẹo khắc chế 1v1 offline theo đặc tính địch
 │   │   ├── repairJson.js        # cứu JSON model trả bị cắt/lỗi
 │   │   └── useVersionCheck.js   # nhắc cập nhật app khi version cũ

@@ -1,6 +1,6 @@
 // src/lib/draftAnalysis.js
-// Phân tích đội hình OFFLINE (không tốn API) cho màn gợi ý: cân bằng sát thương +
-// lỗ hổng vai trò đội mình, và gợi ý BAN dựa trên độ nguy hiểm (threat) tướng địch.
+// Phân tích đội hình OFFLINE (không tốn API): cân bằng sát thương + lỗ hổng vai trò đội mình,
+// và xếp hạng BAN THEO META (tier list + threat) cho tab "Cấm".
 import { findChampion, findChampionBySlug } from "../data/champions";
 
 // Phân tích đội mình từ danh sách đồng đội đã chọn.
@@ -30,17 +30,6 @@ export function analyzeAllies(allies) {
     apPercent: Math.round((ap / total) * 100),
     gaps,
   };
-}
-
-// Gợi ý BAN: tướng địch đã lộ, xếp theo độ nguy hiểm giảm dần (chỉ lấy threat đủ cao).
-// → [{ champ, threat }]
-export function banSuggestions(enemies, { limit = 3, minThreat = 7 } = {}) {
-  return (enemies || [])
-    .map((e) => findChampion(e.name))
-    .filter((c) => c && (c.threat || 0) >= minThreat)
-    .sort((a, b) => (b.threat || 0) - (a.threat || 0))
-    .slice(0, limit)
-    .map((champ) => ({ champ, threat: champ.threat || 0 }));
 }
 
 // ─── Gợi ý BAN THEO META (không phụ thuộc team địch) ───
