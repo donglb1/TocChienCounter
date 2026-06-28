@@ -208,6 +208,19 @@ export async function fetchTierList() {
   return data; // { list:[{slug,name,tier,lanes}], order, source, fetchedAt }
 }
 
+// Lấy SỐ LIỆU META Wild Rift (win/pick/ban rate từ op.gg) cho gợi ý cấm theo dữ liệu thật.
+// Lỗi/rỗng → list:[] (client tự fallback tier list). Cache 6h client để mở màn Cấm mượt.
+const WR_STATS_TTL = 6 * 60 * 60 * 1000;
+export async function fetchWrStats() {
+  const data = await cachedResolve(`wrstats`, WR_STATS_TTL, async () => {
+    const res = await fetch(`${BACKEND_URL}/api/wrstats`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json && Array.isArray(json.list) && json.list.length ? json : null; // rỗng → giữ cache cũ
+  });
+  return data || { list: [], patch: null };
+}
+
 // Lấy build THỰC TẾ theo patch của 1 tướng (cào qua backend). Lỗi → ok:false để client fallback.
 // Cache-first theo slug (24h): mở lại 1 tướng không gọi mạng nữa; chỉ cache build hợp lệ (ok).
 export async function fetchChampBuild(slug) {

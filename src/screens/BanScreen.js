@@ -1,6 +1,7 @@
 // src/screens/BanScreen.js
-// Màn "Cấm": đề xuất tướng NÊN BAN theo META hiện tại — trộn tier list (sức mạnh thực tế
-// patch này) + threat (độ nguy hiểm trong DB). Offline (tier list lỗi) → xếp theo threat DB.
+// Màn "Cấm": đề xuất tướng NÊN BAN theo META.
+// Nguồn ưu tiên: SỐ LIỆU THẬT op.gg (win/pick/ban rate) → xếp hạng theo ban-score.
+// Fallback: tier list (sức mạnh patch) + threat. Offline: chỉ threat trong DB.
 import React, { useEffect, useMemo, useState } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, FlatList, Image, ActivityIndicator,
@@ -11,11 +12,11 @@ import { CHAMPIONS } from "../data/champions";
 import { TierBadge } from "../components/neon";
 import { championIcon, ddragonIdByName } from "../lib/images";
 import { useLiveData } from "../lib/liveData";
-import { fetchTierList } from "../lib/api";
-import { metaBanList } from "../lib/draftAnalysis";
+import { useNews } from "../lib/newsContext";
+import { fetchTierList, fetchWrStats } from "../lib/api";
+import { metaBanList, metaBanListFromStats } from "../lib/draftAnalysis";
 
 const ROLE_VI = { Tank: "Đỡ đòn", Fighter: "Đấu sĩ", Mage: "Pháp sư", Assassin: "Sát thủ", Marksman: "Xạ thủ", Support: "Hỗ trợ" };
-// Lane site (Baron/Jungle/Mid/Dragon/Support) → nhãn ngắn (đồng bộ với Thư viện tướng)
 const LANE_FILTERS = [
   { key: "all", label: "Tất cả" },
   { key: "Baron", label: "Top" },
@@ -24,10 +25,14 @@ const LANE_FILTERS = [
   { key: "Dragon", label: "AD" },
   { key: "Support", label: "Hỗ trợ" },
 ];
-// Màu nhãn ưu tiên cấm theo mức độ
 const PRIORITY_COLOR = { urgent: "#ff4d6d", high: C.amber, mid: C.cyan, low: C.textFaint };
 
-// Avatar có fallback chữ khi icon lỗi (tướng mới chưa có icon DDragon)
+const SOURCE_META = {
+  opgg: { label: "Theo win/pick/ban (op.gg)", color: C.green },
+  tier: { label: "Theo tier list", color: C.cyan },
+  offline: { label: "Offline — theo độ nguy hiểm", color: C.textFaint },
+};
+
 function ChampAvatar({ champ, style }) {
   const [err, setErr] = useState(false);
   const uri = championIcon(champ);
@@ -42,43 +47,69 @@ function ChampAvatar({ champ, style }) {
 }
 
 export default function BanScreen() {
-  useLiveData(); // roster/icon tướng mới phụ thuộc DDragon live
+  useLiveData();
+  const { patch: currentPatch } = useNews() || {};
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [tierRaw, setTierRaw] = useState([]); // entry tier list (slug,name,tier,lanes)
+  const [source, setSource] = useState("offline"); // opgg | tier | offline
+  const [stats, setStats] = useState([]); // số liệu op.gg
+  const [statsPatch, setStatsPatch] = useState(null);
+  const [tierRaw, setTierRaw] = useState([]);
   const [laneFilter, setLaneFilter] = useState("all");
 
-  const load = () => {
+  const load = async () => {
     setLoading(true);
     setError("");
-    fetchTierList()
-      .then((data) => {
-        setTierRaw(data.list || []);
+    // 1) op.gg (số liệu thật) — tốt nhất
+    try {
+      const s = await fetchWrStats();
+      if (s.list && s.list.length) {
+        setStats(s.list);
+        setStatsPatch(s.patch || null);
+        setSource("opgg");
         setLoading(false);
-      })
-      .catch((e) => {
-        setError(String(e.message || e));
+        return;
+      }
+    } catch (_) {}
+    // 2) tier list (sức mạnh patch)
+    try {
+      const t = await fetchTierList();
+      if (t.list && t.list.length) {
+        setTierRaw(t.list);
+        setSource("tier");
         setLoading(false);
-      });
+        return;
+      }
+    } catch (e) {
+      setError(String(e.message || e));
+    }
+    // 3) offline DB (threat)
+    setSource("offline");
+    setLoading(false);
   };
 
   useEffect(() => {
     load();
   }, []);
 
-  const hasTiers = tierRaw.length > 0;
+  const hasLaneFilter = source === "opgg" || source === "tier";
+  // Cảnh báo dữ liệu cũ: op.gg ghi patch khác patch hiện tại của game.
+  const stale = source === "opgg" && statsPatch && currentPatch &&
+    String(statsPatch).split(".").slice(0, 2).join(".") !== String(currentPatch).split(".").slice(0, 2).join(".");
 
-  // Nguồn xếp hạng: tier list (kèm tướng mới chưa có icon) → metaBanList trộn điểm.
-  // Tier list rỗng/offline → fallback DB tĩnh xếp theo threat (không có lane → ẩn filter).
   const bans = useMemo(() => {
-    if (hasTiers) {
-      // Bổ sung id DDragon cho tướng mới (chỉ có trong tier list) để lấy icon.
+    if (source === "opgg" && stats.length) {
+      return metaBanListFromStats(stats, { laneFilter, limit: 20 });
+    }
+    if (source === "tier" && tierRaw.length) {
       const entries = tierRaw.map((e) => ({ ...e, id: ddragonIdByName(e.name) || e.slug }));
       return metaBanList(entries, { laneFilter, limit: 20 });
     }
     const fallback = CHAMPIONS.map((c) => ({ slug: null, name: c.name, tier: null, lanes: [] }));
     return metaBanList(fallback, { laneFilter: "all", limit: 20 });
-  }, [tierRaw, laneFilter, hasTiers]);
+  }, [source, stats, tierRaw, laneFilter]);
+
+  const sm = SOURCE_META[source] || SOURCE_META.offline;
 
   return (
     <View style={styles.wrap}>
@@ -89,14 +120,20 @@ export default function BanScreen() {
             <Text style={styles.introTitle}>NÊN CẤM THEO META</Text>
           </View>
           <Text style={styles.introText}>
-            Xếp hạng tướng đáng cấm nhất patch này — trộn{" "}
-            <Text style={{ color: C.amber }}>tier list</Text> hiện tại với{" "}
-            <Text style={{ color: "#ff7a8a" }}>độ nguy hiểm</Text> của tướng.
-            {hasTiers ? "" : " (Đang offline — xếp theo độ nguy hiểm.)"}
+            Xếp hạng tướng đáng cấm nhất patch này.{" "}
+            <Text style={{ color: sm.color }}>{sm.label}.</Text>
           </Text>
+          {stale ? (
+            <View style={styles.staleRow}>
+              <Ionicons name="warning" size={13} color={C.warn} />
+              <Text style={styles.staleText}>
+                Nguồn ghi patch {statsPatch} (game đang {currentPatch}) — số liệu có thể chưa cập nhật.
+              </Text>
+            </View>
+          ) : null}
         </View>
 
-        {hasTiers && (
+        {hasLaneFilter && (
           <View style={styles.laneRow}>
             {LANE_FILTERS.map((l) => {
               const on = laneFilter === l.key;
@@ -117,9 +154,9 @@ export default function BanScreen() {
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={C.amber} />
-          <Text style={styles.loadingText}>Đang tải tier list…</Text>
+          <Text style={styles.loadingText}>Đang tải số liệu meta…</Text>
         </View>
-      ) : error && !hasTiers ? (
+      ) : error && source === "offline" ? (
         <View style={styles.center}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retry} onPress={load}>
@@ -133,7 +170,8 @@ export default function BanScreen() {
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 28 }}
           renderItem={({ item: b, index }) => {
             const pc = PRIORITY_COLOR[b.priority.level] || C.textFaint;
-            const tc = b.tier ? tierColor(b.tier) : C.textFaint;
+            const tc = b.tier ? tierColor(b.tier) : pc;
+            const hasStats = b.banRate != null || b.winRate != null;
             return (
               <View style={[styles.card, { borderColor: tc + "44" }, glow(tc, 14, 0.22)]}>
                 <View style={[styles.cardBar, { backgroundColor: tc }, glow(tc, 8, 0.8)]} />
@@ -150,6 +188,13 @@ export default function BanScreen() {
                     {b._new ? "Tướng mới" : (ROLE_VI[b.role] || b.role)}
                     {!b._new && b.damageType ? ` · ${b.damageType}` : ""}
                   </Text>
+                  {hasStats && (
+                    <View style={styles.statRow}>
+                      {b.winRate != null && <Text style={[styles.statChip, { color: C.green }]}>Thắng {b.winRate}%</Text>}
+                      {b.banRate != null && <Text style={[styles.statChip, { color: "#ff7a8a" }]}>Cấm {b.banRate}%</Text>}
+                      {b.pickRate != null && <Text style={[styles.statChip, { color: C.textFaint }]}>Pick {b.pickRate}%</Text>}
+                    </View>
+                  )}
                   <Text style={styles.reason}>{b.reason}</Text>
                 </View>
                 <View style={[styles.priBadge, { borderColor: pc }]}>
@@ -174,6 +219,8 @@ const styles = StyleSheet.create({
   introHeadRow: { flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 6 },
   introTitle: { color: "#ff7a8a", fontSize: 12, fontWeight: "900", letterSpacing: 1 },
   introText: { color: C.textDim, fontSize: 13, lineHeight: 19 },
+  staleRow: { flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 8 },
+  staleText: { color: C.warn, fontSize: 11.5, lineHeight: 16, flex: 1 },
   laneRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 12 },
   laneChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: C.border, backgroundColor: C.card },
   laneChipOn: { borderColor: C.violet, backgroundColor: C.violetDim, ...glow(C.violet, 14, 0.4) },
@@ -198,6 +245,8 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   name: { color: C.text, fontWeight: "800", fontSize: 16, flexShrink: 1 },
   sub: { color: C.textFaint, fontSize: 12, marginTop: 2 },
+  statRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 5 },
+  statChip: { fontSize: 11.5, fontWeight: "800" },
   reason: { color: C.textDim, fontSize: 12.5, lineHeight: 17, marginTop: 4 },
   priBadge: { borderWidth: 1, borderRadius: 7, paddingHorizontal: 7, paddingVertical: 3, alignSelf: "flex-start" },
   priText: { fontSize: 10.5, fontWeight: "800" },

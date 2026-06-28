@@ -112,3 +112,67 @@ export function metaBanList(entries, { laneFilter = "all", limit = 15 } = {}) {
   }
   return arr.sort((a, b) => b.score - a.score || (b.threat - a.threat)).slice(0, limit);
 }
+
+// ─── Gợi ý BAN từ SỐ LIỆU THẬT (win/pick/ban rate op.gg) ───
+// Đáng cấm = mạnh (winRate) + được chuộng (pickRate) + đã bị cấm nhiều (banRate, tín hiệu mạnh nhất).
+// stats = [{ name, lane, winRate, pickRate, banRate }] (đơn vị %).
+
+// Lane op.gg (top/jungle/mid/adc/support…) → khóa filter chung (Baron/Jungle/Mid/Dragon/Support).
+function laneKeyFromStats(lane) {
+  const s = (lane || "").toLowerCase();
+  if (/top|baron/.test(s)) return "Baron";
+  if (/jung|^jg$|jgl/.test(s)) return "Jungle";
+  if (/mid/.test(s)) return "Mid";
+  if (/ad|adc|bot|duo|dragon|marks/.test(s)) return "Dragon";
+  if (/sup/.test(s)) return "Support";
+  return null;
+}
+
+// Lý do cấm bám số liệu (ưu tiên banRate) → rơi về đặc tính tướng nếu số liệu nhạt.
+function statsBanReason(champ, wr, pr, br) {
+  if (br != null && br >= 25) return `Bị cấm ${br}% — cộng đồng coi là mối nguy hàng đầu.`;
+  if (wr != null && wr >= 53 && pr != null && pr >= 8) return `Thắng ${wr}% + được pick nhiều — đang áp đảo meta.`;
+  if (wr != null && wr >= 53) return `Tỷ lệ thắng ${wr}% — vượt trội ở patch hiện tại.`;
+  if (br != null && br >= 12) return `Bị cấm ${br}% — nhiều người ngại đối đầu.`;
+  return banReason(champ, null);
+}
+
+export function metaBanListFromStats(stats, { laneFilter = "all", limit = 20 } = {}) {
+  const rows = [];
+  for (const s of stats || []) {
+    const champ = findChampion(s.name);
+    const wr = s.winRate, pr = s.pickRate, br = s.banRate;
+    const threat = (champ && champ.threat) || 0;
+    const wrEdge = wr != null ? wr - 50 : 0; // thắng trên 50% mới tính là "mạnh"
+    // banRate là trọng số mạnh nhất; winRate trên ngưỡng nhân hệ số cao; pickRate & threat phụ.
+    const score = Math.round((br || 0) * 1.2 + Math.max(0, wrEdge) * 3.5 + (pr || 0) * 0.4 + threat * 1.4);
+    rows.push({
+      id: champ?.id || s.name,
+      slug: null,
+      name: champ?.name || s.name,
+      vi: champ?.vi || s.name,
+      tier: null,
+      lanes: champ?.lanes || [],
+      laneKey: laneKeyFromStats(s.lane),
+      role: champ?.role || "",
+      damageType: champ?.damageType || "",
+      threat,
+      winRate: wr, pickRate: pr, banRate: br,
+      score,
+      priority: banPriority(score),
+      reason: statsBanReason(champ, wr, pr, br),
+      champ: champ || { id: s.name, name: s.name, vi: s.name, _new: true },
+      _new: !champ,
+    });
+  }
+  let arr = rows;
+  if (laneFilter && laneFilter !== "all") {
+    arr = arr.filter((x) => x.laneKey === laneFilter);
+  } else {
+    // Tướng nhiều đường → giữ entry điểm cao nhất để khỏi trùng trong danh sách tổng.
+    const byId = {};
+    for (const r of arr) if (!byId[r.id] || r.score > byId[r.id].score) byId[r.id] = r;
+    arr = Object.values(byId);
+  }
+  return arr.sort((a, b) => b.score - a.score || (b.threat - a.threat)).slice(0, limit);
+}
