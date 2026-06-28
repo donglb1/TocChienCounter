@@ -47,17 +47,31 @@ function ChampAvatar({ champ, style }) {
   return <Image source={{ uri }} style={style} onError={() => setErr(true)} />;
 }
 
+// Cache RAM theo PHIÊN mở app: giữ kết quả đã tải để chuyển qua lại tab "Cấm" không phải
+// load lại. Chỉ reset khi app khởi động lại (module nạp mới). Chỉ cache khi có DATA THẬT
+// (opgg/tier) — fallback offline KHÔNG cache để lần vào sau còn thử lại.
+let _banSession = null; // { source, stats, statsPatch, tierRaw }
+
 export default function BanScreen() {
   useLiveData();
   const { patch: currentPatch } = useNews() || {};
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!_banSession);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [source, setSource] = useState("offline"); // opgg | tier | offline
-  const [stats, setStats] = useState([]); // số liệu op.gg
-  const [statsPatch, setStatsPatch] = useState(null);
-  const [tierRaw, setTierRaw] = useState([]);
+  const [source, setSource] = useState(_banSession?.source || "offline"); // opgg | tier | offline
+  const [stats, setStats] = useState(_banSession?.stats || []); // số liệu op.gg
+  const [statsPatch, setStatsPatch] = useState(_banSession?.statsPatch || null);
+  const [tierRaw, setTierRaw] = useState(_banSession?.tierRaw || []);
   const [laneFilter, setLaneFilter] = useState("all");
+
+  // Áp kết quả vào state + lưu cache phiên (dùng cho nguồn có data thật).
+  const cacheAndApply = (r) => {
+    setSource(r.source);
+    setStats(r.stats || []);
+    setStatsPatch(r.statsPatch || null);
+    setTierRaw(r.tierRaw || []);
+    _banSession = r;
+  };
 
   const load = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -66,9 +80,7 @@ export default function BanScreen() {
     try {
       const s = await fetchWrStats();
       if (s.list && s.list.length) {
-        setStats(s.list);
-        setStatsPatch(s.patch || null);
-        setSource("opgg");
+        cacheAndApply({ source: "opgg", stats: s.list, statsPatch: s.patch || null, tierRaw: [] });
         setLoading(false);
         return;
       }
@@ -77,20 +89,23 @@ export default function BanScreen() {
     try {
       const t = await fetchTierList();
       if (t.list && t.list.length) {
-        setTierRaw(t.list);
-        setSource("tier");
+        cacheAndApply({ source: "tier", stats: [], statsPatch: null, tierRaw: t.list });
         setLoading(false);
         return;
       }
     } catch (e) {
       setError(String(e.message || e));
     }
-    // 3) offline DB (threat)
+    // 3) offline DB (threat) — KHÔNG cache để lần vào sau còn thử lại lấy data thật
     setSource("offline");
+    setStats([]);
+    setStatsPatch(null);
+    setTierRaw([]);
     setLoading(false);
   };
 
   useEffect(() => {
+    if (_banSession) return; // đã có data trong phiên → giữ nguyên, không load lại
     load();
   }, []);
 
