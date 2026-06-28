@@ -4,7 +4,7 @@
 // Fallback: tier list (sức mạnh patch) + threat. Offline: chỉ threat trong DB.
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  View, Text, TouchableOpacity, StyleSheet, FlatList, Image, ActivityIndicator,
+  View, Text, TouchableOpacity, StyleSheet, FlatList, Image, RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { C, glow, tierColor } from "../theme";
@@ -15,6 +15,8 @@ import { useLiveData } from "../lib/liveData";
 import { useNews } from "../lib/newsContext";
 import { fetchTierList, fetchWrStats } from "../lib/api";
 import { metaBanList, metaBanListFromStats } from "../lib/draftAnalysis";
+import { tapSelection } from "../lib/haptics";
+import { BanSkeleton } from "../components/Skeleton";
 
 const ROLE_VI = { Tank: "Đỡ đòn", Fighter: "Đấu sĩ", Mage: "Pháp sư", Assassin: "Sát thủ", Marksman: "Xạ thủ", Support: "Hỗ trợ" };
 const LANE_FILTERS = [
@@ -50,6 +52,7 @@ export default function BanScreen() {
   useLiveData();
   const { patch: currentPatch } = useNews() || {};
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [source, setSource] = useState("offline"); // opgg | tier | offline
   const [stats, setStats] = useState([]); // số liệu op.gg
@@ -57,8 +60,8 @@ export default function BanScreen() {
   const [tierRaw, setTierRaw] = useState([]);
   const [laneFilter, setLaneFilter] = useState("all");
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError("");
     // 1) op.gg (số liệu thật) — tốt nhất
     try {
@@ -91,6 +94,12 @@ export default function BanScreen() {
   useEffect(() => {
     load();
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await load(true);
+    setRefreshing(false);
+  };
 
   const hasLaneFilter = source === "opgg" || source === "tier";
   // Cảnh báo dữ liệu cũ: op.gg ghi patch khác patch hiện tại của game.
@@ -141,7 +150,7 @@ export default function BanScreen() {
                 <TouchableOpacity
                   key={l.key}
                   style={[styles.laneChip, on && styles.laneChipOn]}
-                  onPress={() => setLaneFilter(l.key)}
+                  onPress={() => { if (!on) tapSelection(); setLaneFilter(l.key); }}
                 >
                   <Text style={[styles.laneChipText, on && styles.laneChipTextOn]}>{l.label}</Text>
                 </TouchableOpacity>
@@ -152,10 +161,7 @@ export default function BanScreen() {
       </View>
 
       {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={C.amber} />
-          <Text style={styles.loadingText}>Đang tải số liệu meta…</Text>
-        </View>
+        <BanSkeleton />
       ) : error && source === "offline" ? (
         <View style={styles.center}>
           <Text style={styles.errorText}>{error}</Text>
@@ -168,6 +174,9 @@ export default function BanScreen() {
           data={bans}
           keyExtractor={(b) => b.id}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 28 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.amber} />
+          }
           renderItem={({ item: b, index }) => {
             const pc = PRIORITY_COLOR[b.priority.level] || C.textFaint;
             const tc = b.tier ? tierColor(b.tier) : pc;

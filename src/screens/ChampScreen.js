@@ -3,7 +3,7 @@
 // Không cần ảnh, không tốn API — dùng build-identity + template có sẵn.
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image, ScrollView, ActivityIndicator,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image, ScrollView, ActivityIndicator, RefreshControl,
 } from "react-native";
 import { C, glow, noDiacritics, slugify } from "../theme";
 import { CHAMPIONS, BUILD_LABELS, findChampion, findChampionBySlug } from "../data/champions";
@@ -17,6 +17,7 @@ import ItemDetailModal from "../components/ItemDetailModal";
 import RuneDetailModal from "../components/RuneDetailModal";
 import { getFavorites, toggleFavorite } from "../lib/storage";
 import { fetchTierList, aiChampionBuild, getCachedAiBuild } from "../lib/api";
+import { tapSelection } from "../lib/haptics";
 
 // slug site cho 1 tướng (ưu tiên slug thật từ tier list; fallback suy từ tên)
 function champToSlug(champ) {
@@ -75,28 +76,38 @@ export default function ChampScreen() {
   const [tierRaw, setTierRaw] = useState([]); // toàn bộ entry tier list (gồm tướng mới)
   const [sortMode, setSortMode] = useState("az"); // az | tier
   const [laneFilter, setLaneFilter] = useState("all"); // all | Baron | Jungle | Mid | Dragon | Support
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Tải tier list (cào qua backend). Lỗi/offline → bỏ qua, thư viện vẫn chạy từ DB tĩnh.
+  const loadTiers = async (force = false) => {
+    try {
+      const data = await fetchTierList(force);
+      const tm = {}, sm = {}, lm = {};
+      for (const e of data.list || []) {
+        const champ = findChampionBySlug(e.slug) || findChampion(e.name);
+        if (champ) {
+          tm[champ.id] = e.tier;
+          sm[champ.id] = e.slug;
+          lm[champ.id] = e.lanes || [];
+        }
+      }
+      setTierMap(tm);
+      setSlugMap(sm);
+      setLaneMap(lm);
+      setTierRaw(data.list || []);
+    } catch (_) {}
+  };
 
   useEffect(() => {
     getFavorites().then(setFavs);
-    // Tier list (cào qua backend). Lỗi/offline → bỏ qua, thư viện vẫn chạy.
-    fetchTierList()
-      .then((data) => {
-        const tm = {}, sm = {}, lm = {};
-        for (const e of data.list || []) {
-          const champ = findChampionBySlug(e.slug) || findChampion(e.name);
-          if (champ) {
-            tm[champ.id] = e.tier;
-            sm[champ.id] = e.slug;
-            lm[champ.id] = e.lanes || [];
-          }
-        }
-        setTierMap(tm);
-        setSlugMap(sm);
-        setLaneMap(lm);
-        setTierRaw(data.list || []);
-      })
-      .catch(() => {});
+    loadTiers();
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadTiers(true);
+    setRefreshing(false);
+  };
 
   // Roster = DB tĩnh + TƯỚNG MỚI (có trong tier list nhưng chưa có trong DB) → tự xuất hiện
   const roster = useMemo(() => {
@@ -119,7 +130,7 @@ export default function ChampScreen() {
   }, [tierRaw, liveVer]);
 
   const hasTiers = Object.keys(tierMap).length > 0;
-  const onToggleFav = async (id) => setFavs(await toggleFavorite(id));
+  const onToggleFav = async (id) => { tapSelection(); setFavs(await toggleFavorite(id)); };
   // tier của tướng (DB tĩnh tra qua tierMap[id]; tướng mới giữ tier trong chính object)
   const tierOf = (c) => tierMap[c.id] || c.tier;
   const slugOf = (c) => slugMap[c.id] || c.slug || champToSlug(c);
@@ -188,7 +199,7 @@ export default function ChampScreen() {
                   <TouchableOpacity
                     key={l.key}
                     style={[styles.laneChip, on && styles.laneChipOn]}
-                    onPress={() => setLaneFilter(l.key)}
+                    onPress={() => { if (!on) tapSelection(); setLaneFilter(l.key); }}
                   >
                     <Text style={[styles.laneChipText, on && styles.laneChipTextOn]}>{l.label}</Text>
                   </TouchableOpacity>
@@ -197,10 +208,10 @@ export default function ChampScreen() {
             </View>
             <View style={styles.sortRow}>
               <Text style={styles.sortLabel}>Sắp xếp:</Text>
-              <TouchableOpacity onPress={() => setSortMode("az")}>
+              <TouchableOpacity onPress={() => { if (sortMode !== "az") tapSelection(); setSortMode("az"); }}>
                 <Text style={[styles.sortOpt, sortMode === "az" && styles.sortOptOn]}>A–Z</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setSortMode("tier")}>
+              <TouchableOpacity onPress={() => { if (sortMode !== "tier") tapSelection(); setSortMode("tier"); }}>
                 <Text style={[styles.sortOpt, sortMode === "tier" && styles.sortOptOn]}>Theo tier</Text>
               </TouchableOpacity>
             </View>
@@ -212,6 +223,9 @@ export default function ChampScreen() {
         keyExtractor={(c) => c.id}
         numColumns={1}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.amber} />
+        }
         renderItem={({ item: c }) => {
           const fav = favs.includes(c.id);
           return (

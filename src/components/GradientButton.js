@@ -4,11 +4,16 @@ import { Text, StyleSheet, TouchableOpacity, View, ActivityIndicator } from "rea
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { C, GRAD, glow } from "../theme";
+import { tapImpact } from "../lib/haptics";
 
 export default function GradientButton({ title, onPress, disabled, loading, loadingText, icon, style }) {
   const off = disabled || loading;
+  const handlePress = (e) => {
+    tapImpact("medium");
+    onPress?.(e);
+  };
   return (
-    <TouchableOpacity onPress={onPress} disabled={off} activeOpacity={0.85} style={[styles.wrap, style]}>
+    <TouchableOpacity onPress={handlePress} disabled={off} activeOpacity={0.85} style={[styles.wrap, style]}>
       <LinearGradient
         colors={GRAD.cta}
         start={{ x: 0, y: 0 }}

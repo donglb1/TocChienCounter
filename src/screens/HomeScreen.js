@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, FlatList, Image,
-  ActivityIndicator, RefreshControl, Linking,
+  RefreshControl, Linking,
 } from "react-native";
 import { glow } from "../theme";
 import * as WebBrowser from "expo-web-browser";
@@ -12,6 +12,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { C } from "../theme";
 import { CornerBrackets } from "../components/neon";
 import { useNews } from "../lib/newsContext";
+import { tapSelection } from "../lib/haptics";
+import { NewsSkeleton } from "../components/Skeleton";
 
 // "2026-05-27T09:00:00Z" → "27/05/2026"
 function fmtDate(iso) {
@@ -36,6 +38,7 @@ export default function HomeScreen() {
   // Lỗi (vd URL không hợp lệ) → rơi về trình duyệt hệ thống cho chắc.
   const open = (url) => {
     if (!url) return;
+    tapSelection();
     WebBrowser.openBrowserAsync(url, {
       toolbarColor: C.bg,
       controlsColor: C.amber,
@@ -75,9 +78,8 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={C.amber} />
-        <Text style={styles.dim}>Đang tải tin tức…</Text>
+      <View style={styles.wrap}>
+        <NewsSkeleton />
       </View>
     );
   }
