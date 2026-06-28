@@ -1,8 +1,8 @@
 // App.js — điều hướng bằng thanh tab dưới (3 mục), mỗi tab có luồng con riêng.
 // Tách buildSession và suggestSession để 2 luồng không lẫn dữ liệu của nhau.
 import React, { useEffect, useState } from "react";
-import { SafeAreaView, StatusBar, StyleSheet, View, Text, TouchableOpacity } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { StatusBar, StyleSheet, View, Text, TouchableOpacity } from "react-native";
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { C, GRAD, glow } from "./src/theme";
@@ -50,6 +50,7 @@ export default function App() {
 }
 
 function AppShell() {
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState("home");
 
   // Luồng BUILD: setup → confirm → (picks | result)
@@ -89,7 +90,7 @@ function AppShell() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.root}>
+      <SafeAreaView style={styles.root} edges={["top", "left", "right"]}>
         <StatusBar barStyle="light-content" backgroundColor={C.bg} />
         <LinearGradient
           colors={GRAD.header}
@@ -203,7 +204,7 @@ function AppShell() {
           )}
         </View>
 
-        <View style={styles.tabBar}>
+        <View style={[styles.tabBar, { paddingBottom: insets.bottom + 7 }]}>
           {TABS.map((t) => {
             const active = tab === t.key;
             const Icon = t.set === "mci" ? MaterialCommunityIcons : Ionicons;
@@ -256,7 +257,7 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   tabBar: {
     flexDirection: "row", borderTopWidth: 1, borderTopColor: C.border,
-    backgroundColor: "rgba(10,8,18,0.92)", paddingTop: 9, paddingBottom: 7,
+    backgroundColor: C.bgAlt, paddingTop: 9,
   },
   tabItem: { flex: 1, alignItems: "center", gap: 3 },
   tabAccent: {
