@@ -7,6 +7,7 @@
 
 import { repairJson } from "./repairJson";
 import { itemCatalogForDamage, findItemBySlug } from "../data/items";
+import { BUILD_TEMPLATES } from "../data/buildTemplates";
 import { CHAMPION_ALLOWLIST, findChampion, findChampionBySlug, championSlug, BUILD_LABELS } from "../data/champions";
 import { KEYSTONE_CATALOG, MINOR_RUNE_CATALOG, SPELL_CATALOG } from "../data/runes";
 import { setLiveItems, getLiveChampMeta } from "./liveData";
@@ -73,9 +74,23 @@ function slugsToItemNames(slugs) {
     .filter(Boolean);
 }
 
-// Lấy build THỰC TẾ theo patch của tướng người chơi làm "mỏ neo" đồ lõi cho AI.
-// Cào lỗi / chưa nạp catalog item → trả null (AI tự suy từ đặc tính như cũ). KHÔNG chặn phân tích.
+// "Mỏ neo" build chuẩn cho AI = build mẫu CURATED theo archetype của tướng (buildTemplates.js).
+// Mạch lạc + đúng WR; AI giữ làm gốc, chỉ đổi món để khắc chế. Tướng có archetype → dùng template.
+function anchorFromTemplate(champName) {
+  const c = findChampion(champName);
+  const tpl = c && c.build ? BUILD_TEMPLATES[c.build] : null;
+  if (!tpl) return null;
+  return {
+    core: tpl.core || [],
+    boots: tpl.boots ? [tpl.boots] : [],
+    situational: tpl.situational || [],
+  };
+}
+
+// Mỏ neo cho AI: ưu tiên build mẫu archetype (curated). Tướng ngoài DB (không archetype) → cào theo patch.
 async function fetchAnchorBuild(champName) {
+  const fromTpl = anchorFromTemplate(champName);
+  if (fromTpl) return fromTpl;
   try {
     const slug = championSlug(champName);
     if (!slug) return null;
@@ -207,6 +222,7 @@ async function requestChampBuildAI(champName, lane) {
       champ: champName,
       lane: lane || null,
       champMeta: meta,
+      metaBuild: anchorFromTemplate(champName), // neo build mẫu archetype (curated) → build mạch lạc
       runes: KEYSTONE_CATALOG,
       minorRunes: MINOR_RUNE_CATALOG,
       spells: SPELL_CATALOG,
@@ -223,7 +239,7 @@ async function requestChampBuildAI(champName, lane) {
 // AI đề xuất BUILD CHUẨN cho 1 tướng (Thư viện) — thay nguồn cào lỗi. Chỉ chọn trong catalog curated.
 // Cache 7 ngày theo tên tướng. force=true → bỏ qua cache, phân tích LẠI (nút "Phân tích lại").
 export async function aiChampionBuild(champName, lane, force = false) {
-  const key = `aibuild2:${champName}`; // v2: thêm ngọc phụ → bỏ cache cũ
+  const key = `aibuild3:${champName}`; // v3: neo build mẫu + tags synergy → bỏ cache cũ
   if (force) {
     const fresh = await requestChampBuildAI(champName, lane);
     setCached(key, fresh);
@@ -236,7 +252,7 @@ export async function aiChampionBuild(champName, lane, force = false) {
 
 // Peek build AI đã cache (KHÔNG gọi mạng) → hiện sẵn nếu trước đó đã tạo. Chưa có → null.
 export async function getCachedAiBuild(champName) {
-  const c = await getCached(`aibuild2:${champName}`);
+  const c = await getCached(`aibuild3:${champName}`);
   return c ? c.data : null;
 }
 

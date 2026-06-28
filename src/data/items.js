@@ -113,7 +113,7 @@ export const ITEMS = [
 export const ITEM_ALLOWLIST = ITEMS.flatMap((i) => [i.name, i.vi]);
 
 // Catalog rút gọn để nhồi vào prompt: tên + loại + mô tả thuộc tính (grounding cho AI)
-const toCatalog = (i) => ({ name: i.name, vi: i.vi, type: i.type, desc: i.desc });
+const toCatalog = (i) => ({ name: i.name, vi: i.vi, type: i.type, tags: i.tags || [], desc: i.desc });
 export const ITEM_CATALOG = ITEMS.map(toCatalog);
 
 // Suy loại sát thương của 1 item TẤN CÔNG theo tag (chỉ khi CHẮC CHẮN).
