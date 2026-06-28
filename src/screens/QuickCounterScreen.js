@@ -1,7 +1,7 @@
 // src/screens/QuickCounterScreen.js
 // Tra khắc chế 1v1: chọn đường + 1 tướng địch → mẹo + đồ mua sớm TỨC THÌ (offline).
 // Tùy chọn: nút AI gợi ý tướng nên pick để khắc đối thủ đó.
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator,
 } from "react-native";
@@ -11,7 +11,7 @@ import { C, GRAD, LANES, glow } from "../theme";
 import { findChampion, BUILD_LABELS } from "../data/champions";
 import { championIcon, itemIcon } from "../lib/images";
 import { matchupTips, counterItems } from "../lib/matchup";
-import { suggestPicks, analyzeBuild } from "../lib/api";
+import { suggestPicks, analyzeBuild, getCachedBuildForChamp } from "../lib/api";
 import { LanePicker, ChampSearch } from "../components/inputs";
 import ItemDetailModal from "../components/ItemDetailModal";
 import ResultScreen from "./ResultScreen";
@@ -40,8 +40,10 @@ export default function QuickCounterScreen() {
   const [detailItem, setDetailItem] = useState(null);
   const [busyName, setBusyName] = useState(null); // tướng đang phân tích build
   const [buildSession, setBuildSession] = useState(null); // build khắc chế của tướng đã chọn
+  const pickReqRef = useRef(0); // token chống mở lại màn kết quả khi đã quay ra (do build cũ + revalidate nền)
 
   const pick = (c) => {
+    pickReqRef.current += 1; // hủy phản hồi build đang chờ của lượt trước
     setEnemy(c);
     setPicks(null);
     setBuildSession(null);
@@ -51,19 +53,33 @@ export default function QuickCounterScreen() {
   const choosePick = async (p) => {
     const champ = findChampion(p.name);
     if (!champ || !enemy) return;
-    setBusyName(p.name);
+    const base = {
+      champ: champ.vi,
+      lane,
+      enemies: [{ name: enemy.name, displayName: enemy.vi, confidence: "high" }],
+    };
+
+    const reqId = ++pickReqRef.current;
+
+    // Có build cache của tướng này → mở màn kết quả NGAY với build cũ, rồi phân tích lại nền.
+    const cached = await getCachedBuildForChamp(champ.name);
+    if (pickReqRef.current !== reqId) return; // đã đổi tướng/quay ra trong lúc đọc cache
+    if (cached) {
+      setBuildSession({ ...base, build: cached, buildStale: true });
+    } else {
+      setBusyName(p.name);
+    }
+
     try {
       const build = await analyzeBuild({ champ: champ.name, lane, enemies: [enemy.name] });
-      setBuildSession({
-        champ: champ.vi,
-        lane,
-        enemies: [{ name: enemy.name, displayName: enemy.vi, confidence: "high" }],
-        build,
-      });
+      if (pickReqRef.current !== reqId) return; // người dùng đã quay ra → bỏ qua, không mở lại
+      setBuildSession({ ...base, build });
     } catch (e) {
-      setPicks([{ name: "", tier: "", reason: "Lỗi: " + String(e.message || e), counters: [] }]);
+      if (pickReqRef.current !== reqId) return;
+      if (cached) setBuildSession((s) => (s ? { ...s, buildStale: false, buildError: true } : s));
+      else setPicks([{ name: "", tier: "", reason: "Lỗi: " + String(e.message || e), counters: [] }]);
     } finally {
-      setBusyName(null);
+      if (pickReqRef.current === reqId) setBusyName(null);
     }
   };
 
@@ -90,8 +106,8 @@ export default function QuickCounterScreen() {
     return (
       <ResultScreen
         session={buildSession}
-        onRestart={() => setBuildSession(null)}
-        onEditEnemies={() => setBuildSession(null)}
+        onRestart={() => { pickReqRef.current += 1; setBuildSession(null); }}
+        onEditEnemies={() => { pickReqRef.current += 1; setBuildSession(null); }}
         restartLabel="Chọn tướng khác"
         editLabel="← Quay lại"
         compactRunes

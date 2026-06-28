@@ -7,7 +7,7 @@ import {
 import { C } from "../theme";
 import { findChampion } from "../data/champions";
 import { championIcon } from "../lib/images";
-import { analyzeBuild } from "../lib/api";
+import { analyzeBuild, getCachedBuildForChamp } from "../lib/api";
 import { addHistory } from "../lib/storage";
 import { Ionicons } from "@expo/vector-icons";
 import GradientButton from "../components/GradientButton";
@@ -46,20 +46,31 @@ export default function ConfirmScreen({ session, patch, onBack, onAnalyzed, onSu
       Alert.alert("Trống", "Thêm ít nhất 1 tướng địch.");
       return;
     }
-    setLoading(true);
+    const enemyNames = enemies.map((e) => e.name);
+    patch({ enemies });
+
+    // Có build cache của tướng này → hiện TẠM ngay (đồ/ngọc/phép) rồi phân tích lại nền.
+    const cached = await getCachedBuildForChamp(session.champ);
+    if (cached) {
+      patch({ build: cached, buildStale: true, buildError: false });
+      onAnalyzed();
+    } else {
+      setLoading(true);
+    }
+
     try {
-      patch({ enemies });
       const build = await analyzeBuild({
         champ: session.champ,
         lane: session.lane,
-        enemies: enemies.map((e) => e.name),
+        enemies: enemyNames,
         laneOpponent: laneOpp,
       });
-      patch({ build });
-      addHistory({ champ: session.champ, lane: session.lane, enemies: enemies.map((e) => e.name), build });
-      onAnalyzed();
+      patch({ build, buildStale: false, buildError: false });
+      addHistory({ champ: session.champ, lane: session.lane, enemies: enemyNames, build });
+      if (!cached) onAnalyzed();
     } catch (e) {
-      Alert.alert("Lỗi", String(e.message || e));
+      if (cached) patch({ buildStale: false, buildError: true }); // giữ build cũ, báo không cập nhật được
+      else Alert.alert("Lỗi", String(e.message || e));
     } finally {
       setLoading(false);
     }

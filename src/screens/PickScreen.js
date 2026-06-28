@@ -9,7 +9,7 @@ import { C, GRAD, glow, tierColor } from "../theme";
 import { TierBadge } from "../components/neon";
 import { findChampion } from "../data/champions";
 import { championIcon } from "../lib/images";
-import { suggestPicks, analyzeBuild } from "../lib/api";
+import { suggestPicks, analyzeBuild, getCachedBuildForChamp } from "../lib/api";
 import { addHistory } from "../lib/storage";
 
 export default function PickScreen({ session, patch, onBack, onShowBuild }) {
@@ -48,23 +48,29 @@ export default function PickScreen({ session, patch, onBack, onShowBuild }) {
       Alert.alert("Không rõ tướng", `Không tìm thấy "${pick.name}" trong DB.`);
       return;
     }
-    setBusyName(pick.name);
+    const enemyNames = (session.enemies || []).map((e) => e.name);
+
+    // Có build cache của tướng này → mở màn kết quả NGAY với build cũ (đồ/ngọc/phép), rồi phân tích lại nền.
+    const cached = await getCachedBuildForChamp(champ.name);
+    if (cached) {
+      patch({ champ: champ.vi, build: cached, buildStale: true, buildError: false });
+      onShowBuild();
+    } else {
+      setBusyName(pick.name);
+    }
+
     try {
       const build = await analyzeBuild({
         champ: champ.name,
         lane: session.lane,
-        enemies: (session.enemies || []).map((e) => e.name),
+        enemies: enemyNames,
       });
-      patch({ champ: champ.vi, build });
-      addHistory({
-        champ: champ.vi,
-        lane: session.lane,
-        enemies: (session.enemies || []).map((e) => e.name),
-        build,
-      });
-      onShowBuild();
+      patch({ champ: champ.vi, build, buildStale: false, buildError: false });
+      addHistory({ champ: champ.vi, lane: session.lane, enemies: enemyNames, build });
+      if (!cached) onShowBuild();
     } catch (e) {
-      Alert.alert("Lỗi", String(e.message || e));
+      if (cached) patch({ buildStale: false, buildError: true });
+      else Alert.alert("Lỗi", String(e.message || e));
     } finally {
       setBusyName(null);
     }

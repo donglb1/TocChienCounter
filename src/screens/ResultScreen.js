@@ -1,6 +1,6 @@
 // src/screens/ResultScreen.js
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator } from "react-native";
 import { C } from "../theme";
 import { Ionicons } from "@expo/vector-icons";
 import { findItem } from "../data/items";
@@ -97,6 +97,19 @@ export default function ResultScreen({
       <Text style={styles.title}>
         Build cho <Text style={{ color: C.amber }}>{session.champ}</Text> · {session.lane}
       </Text>
+
+      {/* Stale-while-revalidate: đang hiện build cũ (cache) trong lúc phân tích lại theo đội địch */}
+      {session.buildStale ? (
+        <View style={styles.staleBanner}>
+          <ActivityIndicator color={C.cyan} size="small" />
+          <Text style={styles.staleText}>Đang cập nhật build theo đội địch hiện tại…</Text>
+        </View>
+      ) : session.buildError ? (
+        <View style={[styles.staleBanner, styles.staleBannerErr]}>
+          <Ionicons name="cloud-offline-outline" size={15} color={C.warn} />
+          <Text style={[styles.staleText, { color: C.warn }]}>Không cập nhật được — đang hiện build gần nhất.</Text>
+        </View>
+      ) : null}
 
       {/* Profile team địch */}
       <View style={styles.card}>
@@ -239,6 +252,13 @@ function typeText(t) {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: C.bg },
   title: { color: C.text, fontSize: 18, fontWeight: "800", marginBottom: 14 },
+  staleBanner: {
+    flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 14,
+    backgroundColor: C.cyanDim, borderWidth: 1, borderColor: C.cyan, borderRadius: 10,
+    paddingVertical: 10, paddingHorizontal: 13,
+  },
+  staleBannerErr: { backgroundColor: "#2a2410", borderColor: C.warn },
+  staleText: { color: C.cyan, fontSize: 12.5, fontWeight: "700", flex: 1 },
   card: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 14 },
   cardTitle: { color: C.textDim, fontSize: 11, fontWeight: "800", letterSpacing: 1, marginBottom: 12 },
   barWrap: { flexDirection: "row", height: 12, borderRadius: 6, overflow: "hidden", backgroundColor: C.bgAlt },

@@ -107,6 +107,19 @@ async function fetchAnchorBuild(champName) {
   }
 }
 
+// Khóa cache build phân tích GẦN NHẤT của 1 tướng (chuẩn hóa qua id để mọi màn dùng chung khóa).
+function lastBuildKey(champName) {
+  const c = findChampion(champName);
+  return `lastbuild:${c ? c.id : champName}`;
+}
+
+// Peek build đã PHÂN TÍCH gần nhất của 1 tướng (KHÔNG gọi mạng) → hiện TẠM trong lúc
+// đang phân tích lại theo đội địch hiện tại (stale-while-revalidate). Chưa có → null.
+export async function getCachedBuildForChamp(champName) {
+  const c = await getCached(lastBuildKey(champName));
+  return c ? c.data : null;
+}
+
 // Phân tích team địch → build + ngọc + phép khắc chế
 export async function analyzeBuild({ champ, lane, enemies, laneOpponent }) {
   const meta = champMeta(champ); // đặc tính tướng người chơi (gồm damageType)
@@ -134,7 +147,9 @@ export async function analyzeBuild({ champ, lane, enemies, laneOpponent }) {
   const data = await res.json();
   const parsed = repairJson(data.text || "");
   if (!parsed) throw new Error("Không đọc được kết quả phân tích (JSON hỏng).");
-  return parsed; // { teamProfile, build:[...], playstyle }
+  // Lưu build gần nhất theo tướng → lần sau hiện TẠM ngay (ngọc/phép/đồ) trong lúc phân tích lại.
+  setCached(lastBuildKey(champ), parsed);
+  return parsed; // { teamProfile, build:[...], keystone, minorRunes, spells, playstyle }
 }
 
 // Lấy tier list rồi map → { tên tướng (Anh): tier } để AI bám meta hiện tại.
