@@ -64,23 +64,27 @@ function TierBadge({ tier, big }) {
 
 const norm = noDiacritics; // tìm kiếm không phân biệt dấu
 
+// Cache RAM theo PHIÊN mở app: giữ tier list đã tải để chuyển qua lại tab "Tướng" không
+// phải tải lại. Chỉ reset khi app khởi động lại (module nạp mới).
+let _champSession = null; // { tierMap, slugMap, laneMap, tierRaw }
+
 export default function ChampScreen() {
   const liveVer = useLiveData(); // roster/icon tướng mới phụ thuộc DDragon live
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState(null);
   const [favs, setFavs] = useState([]);
-  const [tierMap, setTierMap] = useState({}); // champ.id → tier
-  const [slugMap, setSlugMap] = useState({}); // champ.id → slug site (cho fetch build)
-  const [laneMap, setLaneMap] = useState({}); // champ.id → [lane site]
-  const [tierRaw, setTierRaw] = useState([]); // toàn bộ entry tier list (gồm tướng mới)
+  const [tierMap, setTierMap] = useState(_champSession?.tierMap || {}); // champ.id → tier
+  const [slugMap, setSlugMap] = useState(_champSession?.slugMap || {}); // champ.id → slug site (cho fetch build)
+  const [laneMap, setLaneMap] = useState(_champSession?.laneMap || {}); // champ.id → [lane site]
+  const [tierRaw, setTierRaw] = useState(_champSession?.tierRaw || []); // toàn bộ entry tier list (gồm tướng mới)
   const [sortMode, setSortMode] = useState("az"); // az | tier
   const [laneFilter, setLaneFilter] = useState("all"); // all | Baron | Jungle | Mid | Dragon | Support
   const [refreshing, setRefreshing] = useState(false);
 
   // Tải tier list (cào qua backend). Lỗi/offline → bỏ qua, thư viện vẫn chạy từ DB tĩnh.
-  const loadTiers = async (force = false) => {
+  const loadTiers = async () => {
     try {
-      const data = await fetchTierList(force);
+      const data = await fetchTierList();
       const tm = {}, sm = {}, lm = {};
       for (const e of data.list || []) {
         const champ = findChampionBySlug(e.slug) || findChampion(e.name);
@@ -94,17 +98,18 @@ export default function ChampScreen() {
       setSlugMap(sm);
       setLaneMap(lm);
       setTierRaw(data.list || []);
+      _champSession = { tierMap: tm, slugMap: sm, laneMap: lm, tierRaw: data.list || [] };
     } catch (_) {}
   };
 
   useEffect(() => {
-    getFavorites().then(setFavs);
-    loadTiers();
+    getFavorites().then(setFavs); // luôn đọc tướng tủ mới nhất (có thể đổi ngay trong màn này)
+    if (!_champSession) loadTiers(); // tier list: chỉ tải lần đầu mỗi phiên
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadTiers(true);
+    await loadTiers();
     setRefreshing(false);
   };
 

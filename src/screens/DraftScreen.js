@@ -22,15 +22,20 @@ const TEAM_META = {
   enemy: { label: "ĐỊCH", color: C.red, ban: "ĐỊCH CẤM", pick: "ĐỊCH CHỌN" },
 };
 
+// Cache RAM theo PHIÊN mở app: giữ tier list + tiến trình draft đang dở để chuyển qua lại
+// tab "Draft" không phải tải lại / không mất draft. Chỉ reset khi app khởi động lại.
+let _draftSession = null; // { tierMap, step, bansAlly, bansEnemy, picksAlly, picksEnemy }
+
 export default function DraftScreen() {
   useLiveData();
-  const [tierMap, setTierMap] = useState({});
+  const [tierMap, setTierMap] = useState(_draftSession?.tierMap || {});
   const [refreshing, setRefreshing] = useState(false);
-  const [step, setStep] = useState(0);
-  const [bansAlly, setBansAlly] = useState([]);
-  const [bansEnemy, setBansEnemy] = useState([]);
-  const [picksAlly, setPicksAlly] = useState([]);
-  const [picksEnemy, setPicksEnemy] = useState([]);
+  // Tiến trình draft cũng seed từ cache phiên → chuyển tab rồi quay lại không mất.
+  const [step, setStep] = useState(_draftSession?.step || 0);
+  const [bansAlly, setBansAlly] = useState(_draftSession?.bansAlly || []);
+  const [bansEnemy, setBansEnemy] = useState(_draftSession?.bansEnemy || []);
+  const [picksAlly, setPicksAlly] = useState(_draftSession?.picksAlly || []);
+  const [picksEnemy, setPicksEnemy] = useState(_draftSession?.picksEnemy || []);
 
   const loadTiers = async () => {
     try {
@@ -43,8 +48,15 @@ export default function DraftScreen() {
       setTierMap(tm);
     } catch (_) {}
   };
-  useEffect(() => { loadTiers(); }, []);
+  useEffect(() => {
+    if (!_draftSession || Object.keys(_draftSession.tierMap || {}).length === 0) loadTiers();
+  }, []);
   const onRefresh = async () => { setRefreshing(true); await loadTiers(); setRefreshing(false); };
+
+  // Đồng bộ toàn bộ trạng thái (tier + tiến trình draft) vào cache phiên để giữ khi chuyển tab.
+  useEffect(() => {
+    _draftSession = { tierMap, step, bansAlly, bansEnemy, picksAlly, picksEnemy };
+  }, [tierMap, step, bansAlly, bansEnemy, picksAlly, picksEnemy]);
 
   const done = step >= DRAFT_STEPS.length;
   const cur = done ? null : DRAFT_STEPS[step];
