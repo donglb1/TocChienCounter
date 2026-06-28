@@ -94,6 +94,7 @@ export default function QuickCounterScreen() {
         onEditEnemies={() => setBuildSession(null)}
         restartLabel="Chọn tướng khác"
         editLabel="← Quay lại"
+        compactRunes
       />
     );
   }

@@ -83,6 +83,7 @@ export default function ResultScreen({
   onEditEnemies,
   restartLabel = "Phân tích trận mới",
   editLabel = "Sửa team địch",
+  compactRunes = false, // true → ẩn lý do ngọc/phép inline, chỉ hiện chi tiết khi bấm (như Thư viện)
 }) {
   const [detailItem, setDetailItem] = React.useState(null);
   const [detailRune, setDetailRune] = React.useState(null);
@@ -154,13 +155,13 @@ export default function ResultScreen({
         <View style={styles.swCard}>
           <Text style={styles.cardTitle}>NGỌC & PHÉP BỔ TRỢ</Text>
           {b.keystone?.name ? (
-            <RuneRow rune={findKeystone(b.keystone.name) || { name: b.keystone.name }} kind="keystone" badge="NGỌC" reason={b.keystone.reason} onOpen={setDetailRune} />
+            <RuneRow rune={findKeystone(b.keystone.name) || { name: b.keystone.name }} kind="keystone" badge="NGỌC" reason={compactRunes ? null : b.keystone.reason} onOpen={setDetailRune} />
           ) : null}
           {(b.minorRunes || []).filter((r) => r && r.name).map((r, i) => (
-            <RuneRow key={`m${i}`} rune={findRune(r.name) || { name: r.name }} kind="minor" badge="NGỌC PHỤ" badgeStyle={styles.rsBadgeMinor} reason={r.reason} onOpen={setDetailRune} />
+            <RuneRow key={`m${i}`} rune={findRune(r.name) || { name: r.name }} kind="minor" badge="NGỌC PHỤ" badgeStyle={styles.rsBadgeMinor} reason={compactRunes ? null : r.reason} onOpen={setDetailRune} />
           ))}
           {(b.spells || []).filter((s) => s && s.name).map((s, i) => (
-            <RuneRow key={i} rune={findSpell(s.name) || { name: s.name }} kind="spell" badge="PHÉP" badgeStyle={styles.rsBadgeSpell} reason={s.reason} onOpen={setDetailRune} />
+            <RuneRow key={i} rune={findSpell(s.name) || { name: s.name }} kind="spell" badge="PHÉP" badgeStyle={styles.rsBadgeSpell} reason={compactRunes ? null : s.reason} onOpen={setDetailRune} />
           ))}
         </View>
       )}
