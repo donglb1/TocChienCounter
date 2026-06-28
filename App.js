@@ -20,12 +20,14 @@ import ResultScreen from "./src/screens/ResultScreen";
 import PickScreen from "./src/screens/PickScreen";
 import SuggestSetupScreen from "./src/screens/SuggestSetupScreen";
 import ChampScreen from "./src/screens/ChampScreen";
+import BanScreen from "./src/screens/BanScreen";
 import QuickCounterScreen from "./src/screens/QuickCounterScreen";
 import HistoryScreen from "./src/screens/HistoryScreen";
 
 const TABS = [
   { key: "home", label: "Tin tức", set: "ion", icon: "newspaper-outline", iconActive: "newspaper" },
   { key: "champ", label: "Tướng", set: "ion", icon: "library-outline", iconActive: "library" },
+  { key: "ban", label: "Cấm", set: "ion", icon: "ban-outline", iconActive: "ban" },
   { key: "counter", label: "1v1", set: "mci", icon: "sword-cross", iconActive: "sword-cross" },
   { key: "build", label: "Build", set: "ion", icon: "construct-outline", iconActive: "construct" },
   { key: "suggest", label: "Đội hình", set: "ion", icon: "people-outline", iconActive: "people" },
@@ -67,6 +69,7 @@ function AppShell() {
   const stepLabel = () => {
     if (tab === "home") return "Tin tức";
     if (tab === "champ") return "Thư viện tướng";
+    if (tab === "ban") return "Đề xuất cấm";
     if (tab === "counter") return "Khắc chế 1v1";
     if (tab === "build") {
       return buildScreen === "setup" ? "1 · Thiết lập"
@@ -113,6 +116,7 @@ function AppShell() {
         <View style={styles.content}>
           {tab === "home" && <HomeScreen />}
           {tab === "champ" && <ChampScreen />}
+          {tab === "ban" && <BanScreen />}
           {tab === "counter" && <QuickCounterScreen />}
 
           {tab === "build" && buildScreen === "setup" && (
