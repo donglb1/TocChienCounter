@@ -300,6 +300,7 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
   const minorRunes = usingAi ? (ai.minorRunes || []).filter((r) => r && r.name) : [];
   const spells = usingAi ? (ai.spells || []).map((s) => s.name) : tpl?.spells;
   const note = usingAi ? ai.playstyle : tpl?.note;
+  const coaching = usingAi ? ai.coaching : null;
   const hasBuild = core.length > 0 || boots.length > 0;
   const sourceLabel = usingAi ? "AI đề xuất (tối ưu)" : tpl ? "Build mẫu (offline)" : null;
 
@@ -399,6 +400,15 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
               {(spells || []).map((s, i) => (
                 <RuneRow key={`sp${i}`} rune={findSpell(s) || { name: s }} kind="spell" badge="PHÉP" badgeStyle={styles.rsBadgeSpell} onOpen={setDetailRune} />
               ))}
+
+              {coaching && (coaching.skillOrder || coaching.combo || coaching.powerSpike) ? (
+                <View style={styles.noteCard}>
+                  <Text style={styles.noteLabel}>CÁCH CHƠI</Text>
+                  {coaching.skillOrder ? <Text style={styles.coachLine}><Text style={styles.coachKey}>Nâng kỹ năng: </Text>{coaching.skillOrder}</Text> : null}
+                  {coaching.combo ? <Text style={styles.coachLine}><Text style={styles.coachKey}>Combo: </Text>{coaching.combo}</Text> : null}
+                  {coaching.powerSpike ? <Text style={styles.coachLine}><Text style={styles.coachKey}>Mạnh nhất: </Text>{coaching.powerSpike}</Text> : null}
+                </View>
+              ) : null}
 
               {note ? (
                 <View style={styles.noteCard}>
@@ -551,4 +561,6 @@ const styles = StyleSheet.create({
   noteCard: { backgroundColor: C.cardAlt, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 13, marginTop: 18 },
   noteLabel: { color: C.textDim, fontSize: 11, fontWeight: "800", letterSpacing: 1, marginBottom: 6 },
   noteText: { color: C.text, fontSize: 13, lineHeight: 20 },
+  coachLine: { color: C.text, fontSize: 13, lineHeight: 20, marginTop: 3 },
+  coachKey: { color: C.cyan, fontWeight: "800" },
 });

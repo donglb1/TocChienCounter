@@ -194,6 +194,12 @@ CÁCH PHÂN TÍCH:
    - Địch có hồi máu/hút máu -> BẮT BUỘC 1 món Vết Thương Sâu (grievous).
    - Sát thủ burst -> đồ cứu mạng (revive/shield/stasis). Nhiều CC -> kháng hiệu ứng (tenacity).
 4. Ngọc + phép bổ trợ chọn theo đối thủ (vd địch hồi máu -> Thiêu Đốt; sát thủ/xạ thủ mạnh -> Kiệt Sức).
+5. CÁCH CHƠI TƯỚNG (coaching) cho ĐÚNG tướng người chơi:
+   - skillOrder: thứ tự ưu tiên nâng kỹ năng theo Q/W/E/R (vd "R > Q > E > W"), bám đúng tướng này.
+   - combo: combo tung skill cơ bản nhất (vd "Q → đánh thường → E → R").
+   - powerSpike: tướng mạnh nhất ở mốc nào (level/đồ lõi) để biết lúc nào nên ép giao tranh.
+6. CHIA GIAI ĐOẠN từng món (phase): "early" = mua sớm/đối lane, "mid" = đồ lõi giữa trận, "late" = cuối trận.
+7. situationalSwaps: 1-3 cặp "KHI địch làm X → THÊM/ĐỔI sang món Y" (item PHẢI nằm trong catalog).
 
 CHỈ chọn TRANG BỊ trong CATALOG — trả tên tiếng Anh CHÍNH XÁC như trong catalog (không bịa, không đổi dấu nháy):
 ${itemList}
@@ -208,17 +214,19 @@ CHỈ chọn PHÉP trong danh sách — trả tên tiếng Anh CHÍNH XÁC như 
 ${spellList}
 
 YÊU CẦU OUTPUT — VIẾT NGẮN GỌN:
-- build ĐÚNG 5 món gồm 1 đôi giày, thứ tự ưu tiên lên đồ. "reason" ≤10 từ.
+- build ĐÚNG 5 món gồm 1 đôi giày, thứ tự ưu tiên lên đồ. "reason" ≤10 từ. Mỗi món có "phase".
 - "yourStrengths"/"yourWeaknesses": ≤14 từ mỗi cái. "summary" ≤14 từ. "playstyle" ≤20 từ.
 - "alternatives": ≤1 phương án/món, "condition" ≤6 từ (không cần để []). "mainThreats": tối đa 3.
 - "keystone": 1 ngọc chính; "minorRunes": ĐÚNG 4 ngọc phụ (3 cùng nhánh ngọc chính + 1 nhánh khác); "spells": ĐÚNG 2 phép. "reason" ≤8 từ.
+- "coaching": skillOrder ≤6 ký tự nhánh (vd "R>Q>E>W"); combo ≤14 từ; powerSpike ≤14 từ.
+- "situationalSwaps": 1-3 mục; "when" ≤8 từ; "item" PHẢI trong catalog.
 
 CHỈ trả JSON thuần (không markdown, không \`\`\`):
-{"teamProfile":{"adPercent":0,"apPercent":0,"ccLevel":"none|low|medium|high","hasHealing":false,"mainThreats":[""],"summary":""},"yourStrengths":"","yourWeaknesses":"","keystone":{"name":"","reason":""},"minorRunes":[{"name":"","reason":""}],"spells":[{"name":"","reason":""}],"build":[{"order":1,"item":"","type":"core|boots|situational","reason":"","alternatives":[{"item":"","condition":""}]}],"playstyle":""}`;
+{"teamProfile":{"adPercent":0,"apPercent":0,"ccLevel":"none|low|medium|high","hasHealing":false,"mainThreats":[""],"summary":""},"yourStrengths":"","yourWeaknesses":"","keystone":{"name":"","reason":""},"minorRunes":[{"name":"","reason":""}],"spells":[{"name":"","reason":""}],"coaching":{"skillOrder":"","combo":"","powerSpike":""},"build":[{"order":1,"item":"","type":"core|boots|situational","phase":"early|mid|late","reason":"","alternatives":[{"item":"","condition":""}]}],"situationalSwaps":[{"when":"","item":""}],"playstyle":""}`;
 
   return {
     model: ANALYZE_MODEL,
-    max_tokens: 1400,
+    max_tokens: 1700,
     ...ANALYZE_CFG,
     messages: [{ role: "user", content: prompt }],
   };
@@ -259,6 +267,8 @@ CÁCH CHỌN:
 - SYNERGY theo TAG: chí mạng (critDamage) đi cùng critDamage/onHit; on-hit đi cùng onHit; tốn năng lượng cần item mana; xuyên giáp cho sát thủ AD; magicPen cho pháp sư. KHÔNG trộn phá synergy.
 - Build cân bằng: đủ sát thương + 1 món sống sót hợp tướng. Đúng 1 đôi giày.
 - Ngọc + 2 phép bổ trợ chuẩn nhất cho tướng.
+- CÁCH CHƠI (coaching): skillOrder = thứ tự nâng kỹ năng Q/W/E/R (vd "R > Q > E > W");
+  combo = combo skill cơ bản nhất; powerSpike = tướng mạnh nhất ở mốc level/đồ nào.
 
 CHỈ chọn TRANG BỊ trong CATALOG dưới đây (trả tên tiếng Anh CHÍNH XÁC như trong catalog).
 ⚠ TUYỆT ĐỐI KHÔNG dùng tên item không xuất hiện trong danh sách này, dù nó quen thuộc ở LMHT PC
@@ -278,13 +288,14 @@ ${spellList}
 YÊU CẦU OUTPUT — NGẮN GỌN:
 - "boots": 1 đôi giày. "core": 3 món cốt lõi (thứ tự lên). "situational": 2-3 món tùy tình huống.
 - "keystone": 1 ngọc chính; "minorRunes": ĐÚNG 4 ngọc phụ (3 cùng nhánh + 1 nhánh khác); "spells": ĐÚNG 2 phép. "reason" ≤8 từ. "playstyle" ≤20 từ.
+- "coaching": skillOrder ≤9 ký tự (vd "R>Q>E>W"); combo ≤14 từ; powerSpike ≤14 từ.
 
 CHỈ trả JSON thuần (không markdown, không \`\`\`):
-{"boots":"","core":["",""],"situational":["",""],"keystone":{"name":"","reason":""},"minorRunes":[{"name":"","reason":""}],"spells":[{"name":"","reason":""}],"playstyle":""}`;
+{"boots":"","core":["",""],"situational":["",""],"keystone":{"name":"","reason":""},"minorRunes":[{"name":"","reason":""}],"spells":[{"name":"","reason":""}],"coaching":{"skillOrder":"","combo":"","powerSpike":""},"playstyle":""}`;
 
   return {
     model: ANALYZE_MODEL,
-    max_tokens: 1100,
+    max_tokens: 1300,
     ...ANALYZE_CFG,
     messages: [{ role: "user", content: prompt }],
   };

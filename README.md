@@ -14,7 +14,7 @@ và cập nhật tin tức/tier list/build **tự bám theo patch**.
 | **Tướng** | `ChampScreen` | Thư viện tướng: build chuẩn theo archetype (offline) + build thật cào theo patch, tier list, lọc theo đường, yêu thích. Tướng mới tự xuất hiện từ tier list. |
 | **Cấm** | `BanScreen` | Đề xuất tướng **nên ban theo meta**. Ưu tiên **số liệu thật** (win/pick/ban rate cào op.gg) → ban-score. Fallback: tier list + độ nguy hiểm (threat). Offline: chỉ threat. Lọc theo đường + cảnh báo dữ liệu lệch patch. |
 | **1v1** | `QuickCounterScreen` | Tra khắc chế đối lane tức thì (offline): đồ mua sớm + mẹo đi đường. Nút AI gợi ý tướng pick để khắc đối thủ. |
-| **Build** | `Setup → Confirm → Result` | Nạp ảnh màn chọn tướng/loading (**nút "Lấy ảnh vừa chụp"** lấy thẳng screenshot mới nhất, khỏi mở gallery) → AI **tự nhận tướng bạn đang chơi + đường + team địch** từ ảnh, tự điền sẵn (vẫn sửa tay được) → xác nhận → build khắc chế từng bước có lý do + phương án thay thế. Có lịch sử phân tích. |
+| **Build** | `Setup → Confirm → Result` | Nạp ảnh màn chọn tướng/loading (**nút "Lấy ảnh vừa chụp"** lấy thẳng screenshot mới nhất, khỏi mở gallery) → AI **tự nhận tướng bạn đang chơi + đường + team địch** từ ảnh, tự điền sẵn (vẫn sửa tay được) → xác nhận → build khắc chế từng bước (có **giai đoạn** sớm/giữa/cuối + lý do + phương án thay thế), **cách chơi** (thứ tự nâng kỹ năng · combo · power spike) và **đổi đồ theo tình huống**. Có lịch sử phân tích. |
 | **Đội hình** | `SuggestSetup → Pick → Result` | Nhập đồng đội + địch ở màn cấm/chọn → gợi ý tướng nên pick. Phân tích offline tức thì: profile AD/AP đội mình, lỗ hổng vai trò. |
 
 Chạm bất kỳ **trang bị** nào (màn Build / Thư viện) → xem chi tiết: tên Việt/Anh, loại, mô tả thuộc tính.

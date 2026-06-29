@@ -270,7 +270,7 @@ async function requestChampBuildAI(champName, lane) {
 // AI đề xuất BUILD CHUẨN cho 1 tướng (Thư viện) — thay nguồn cào lỗi. Chỉ chọn trong catalog curated.
 // Cache 7 ngày theo tên tướng. force=true → bỏ qua cache, phân tích LẠI (nút "Phân tích lại").
 export async function aiChampionBuild(champName, lane, force = false) {
-  const key = `aibuild3:${champName}`; // v3: neo build mẫu + tags synergy → bỏ cache cũ
+  const key = `aibuild4:${champName}`; // v4: thêm coaching (skill/combo/spike) → bỏ cache cũ
   if (force) {
     const fresh = await requestChampBuildAI(champName, lane);
     setCached(key, fresh);
@@ -283,7 +283,7 @@ export async function aiChampionBuild(champName, lane, force = false) {
 
 // Peek build AI đã cache (KHÔNG gọi mạng) → hiện sẵn nếu trước đó đã tạo. Chưa có → null.
 export async function getCachedAiBuild(champName) {
-  const c = await getCached(`aibuild3:${champName}`);
+  const c = await getCached(`aibuild4:${champName}`);
   return c ? c.data : null;
 }
 

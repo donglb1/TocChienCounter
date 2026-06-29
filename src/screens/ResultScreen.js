@@ -179,6 +179,22 @@ export default function ResultScreen({
         </View>
       )}
 
+      {/* Cách chơi tướng: thứ tự skill + combo + power spike */}
+      {b.coaching && (b.coaching.skillOrder || b.coaching.combo || b.coaching.powerSpike) && (
+        <View style={styles.swCard}>
+          <Text style={styles.cardTitle}>CÁCH CHƠI TƯỚNG</Text>
+          {b.coaching.skillOrder ? (
+            <CoachRow icon="git-branch-outline" label="Nâng kỹ năng" value={b.coaching.skillOrder} />
+          ) : null}
+          {b.coaching.combo ? (
+            <CoachRow icon="flash-outline" label="Combo" value={b.coaching.combo} />
+          ) : null}
+          {b.coaching.powerSpike ? (
+            <CoachRow icon="trending-up-outline" label="Mạnh nhất" value={b.coaching.powerSpike} />
+          ) : null}
+        </View>
+      )}
+
       {/* Build từng bước */}
       <Text style={styles.section}>BUILD KHẮC CHẾ</Text>
       {(b.build || []).map((step, i) => (
@@ -188,6 +204,9 @@ export default function ResultScreen({
               <Text style={styles.orderText}>{step.order || i + 1}</Text>
             </View>
             <ItemGem name={step.item} onPress={setDetailItem} />
+            {phaseText(step.phase) ? (
+              <Text style={[styles.phaseTag, phaseStyle(step.phase)]}>{phaseText(step.phase)}</Text>
+            ) : null}
             {step.type ? <Text style={styles.typeTag}>{typeText(step.type)}</Text> : null}
           </View>
           {step.reason ? <Text style={styles.reason}>{step.reason}</Text> : null}
@@ -203,6 +222,22 @@ export default function ResultScreen({
           )}
         </View>
       ))}
+
+      {/* Đổi đồ theo tình huống (động) */}
+      {Array.isArray(b.situationalSwaps) && b.situationalSwaps.filter((s) => s && s.item).length > 0 && (
+        <View style={styles.swapCard}>
+          <Text style={styles.cardTitle}>ĐỔI ĐỒ THEO TÌNH HUỐNG</Text>
+          {b.situationalSwaps.filter((s) => s && s.item).map((s, i) => (
+            <View key={i} style={styles.swapRow}>
+              <Ionicons name="swap-horizontal" size={15} color={C.cyan} />
+              <Text style={styles.swapText}>
+                {s.when ? <Text style={styles.swapWhen}>{s.when} → </Text> : null}
+                <Text style={styles.swapItem}>{altName(s.item)}</Text>
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {b.playstyle ? (
         <View style={styles.playstyle}>
@@ -229,6 +264,24 @@ export default function ResultScreen({
 function altName(name) {
   const it = findItem(name);
   return it ? it.vi : name;
+}
+// 1 dòng coaching: icon + nhãn + nội dung
+function CoachRow({ icon, label, value }) {
+  return (
+    <View style={styles.coachRow}>
+      <Ionicons name={icon} size={15} color={C.cyan} />
+      <Text style={styles.coachLabel}>{label}</Text>
+      <Text style={styles.coachValue}>{value}</Text>
+    </View>
+  );
+}
+function phaseText(p) {
+  return { early: "SỚM", mid: "GIỮA", late: "CUỐI" }[p] || "";
+}
+function phaseStyle(p) {
+  return { early: { color: C.green, borderColor: C.green },
+    mid: { color: C.amber, borderColor: C.amberDim },
+    late: { color: C.violet, borderColor: C.violetDim } }[p] || null;
 }
 function Meta({ label, value, warn }) {
   return (
@@ -288,6 +341,15 @@ const styles = StyleSheet.create({
   rsBadgeMinor: { color: C.violet, borderColor: C.violetDim },
   rsName: { color: C.text, fontSize: 14, fontWeight: "700", flexShrink: 1 },
   rsReason: { color: C.textDim, fontSize: 12, flexShrink: 1 },
+  coachRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginTop: 8 },
+  coachLabel: { color: C.cyan, fontSize: 12, fontWeight: "800", width: 86 },
+  coachValue: { color: C.text, fontSize: 13, lineHeight: 19, flex: 1 },
+  phaseTag: { fontSize: 9.5, fontWeight: "900", letterSpacing: 0.5, borderWidth: 1, borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1.5 },
+  swapCard: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.cyanDim, padding: 14, marginTop: 4 },
+  swapRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
+  swapText: { color: C.text, fontSize: 13, lineHeight: 19, flex: 1 },
+  swapWhen: { color: C.textDim, fontWeight: "600" },
+  swapItem: { color: C.cyan, fontWeight: "800" },
   section: { color: C.amber, fontSize: 13, fontWeight: "800", letterSpacing: 1, marginTop: 22, marginBottom: 12 },
   step: { backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 12, marginBottom: 10 },
   stepHead: { flexDirection: "row", alignItems: "center", gap: 10 },
