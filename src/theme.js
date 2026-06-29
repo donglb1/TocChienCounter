@@ -72,6 +72,19 @@ export function avatarGradient(seed = "?") {
 
 export const LANES = ["Đường trên", "Rừng", "Đường giữa", "Đường dưới", "Hỗ trợ"];
 
+// Map key đường (AI đọc từ ảnh trả về) → nhãn LANES tiếng Việt. Lạ/unknown → null.
+const LANE_KEY_MAP = {
+  top: "Đường trên",
+  jungle: "Rừng", jg: "Rừng", jung: "Rừng",
+  mid: "Đường giữa", middle: "Đường giữa",
+  bot: "Đường dưới", bottom: "Đường dưới", adc: "Đường dưới", ad: "Đường dưới", duo: "Đường dưới",
+  support: "Hỗ trợ", sup: "Hỗ trợ", supp: "Hỗ trợ",
+};
+export function laneFromKey(key) {
+  if (!key) return null;
+  return LANE_KEY_MAP[String(key).trim().toLowerCase()] || null;
+}
+
 // Bỏ dấu tiếng Việt để match autocomplete không phân biệt dấu
 export function noDiacritics(str) {
   return (str || "")

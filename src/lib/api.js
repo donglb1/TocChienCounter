@@ -47,7 +47,8 @@ function champMeta(name) {
 //    Production trên Vercel cố định, KHÔNG đổi giữa các lần `vercel --prod`.
 export const BACKEND_URL = "https://tocchiencounter.vercel.app";
 
-// Đọc ảnh team địch → trả danh sách tướng (JSON có cấu trúc)
+// Đọc ảnh trận đấu → danh sách tướng + (tự nhận) tướng & đường của NGƯỜI CHƠI.
+// champ/lane là TÙY CHỌN: truyền vào làm gợi ý tách phe; bỏ trống thì AI tự đọc từ ảnh.
 export async function extractChampions({ imageBase64, mediaType, champ, lane }) {
   const res = await fetch(`${BACKEND_URL}/api/analyze`, {
     method: "POST",
@@ -64,7 +65,9 @@ export async function extractChampions({ imageBase64, mediaType, champ, lane }) 
   const data = await res.json();
   const parsed = repairJson(data.text || "");
   if (!parsed) throw new Error("Không đọc được kết quả nhận diện (JSON hỏng).");
-  return parsed; // { userTeam, enemyChampions:[{name,displayName,confidence}], allyChampions, overallConfidence, notes }
+  // { userTeam, userChampion:{name,displayName,confidence}, userLane:"top|jungle|mid|bot|support|unknown",
+  //   enemyChampions:[{name,displayName,confidence}], allyChampions, overallConfidence, notes }
+  return parsed;
 }
 
 // Đổi list slug item (từ build live) → tên item thật để AI đọc được. Slug lạ → bỏ.

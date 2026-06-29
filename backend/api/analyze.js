@@ -95,22 +95,36 @@ export default async function handler(req, res) {
 }
 
 // ───────────────────────── EXTRACT (vision) ─────────────────────────
+// champ/lane là TÙY CHỌN: có thì dùng làm gợi ý để tách phe; không có thì AI tự đọc
+// tướng + đường của NGƯỜI CHƠI (chủ ảnh) từ màn chọn tướng/loading.
 function buildExtract({ imageBase64, mediaType, champ, lane }) {
+  const hasHint = champ && String(champ).trim();
+  const userTask = hasHint
+    ? `Người chơi dùng tướng: "${champ}"${lane ? `, ${lane}` : ""}.
+1. Tìm tướng "${champ}" để xác định phe người chơi (đồng minh). Phe còn lại là ĐỊCH.
+2. Vẫn trả "userChampion" = đúng tướng "${champ}" và suy ra "userLane" từ ảnh nếu thấy.`
+    : `KHÔNG có gợi ý tướng — hãy TỰ XÁC ĐỊNH tướng của NGƯỜI CHƠI (chủ ảnh) và ĐƯỜNG họ đi:
+1. Trong màn chọn tướng/loading, tướng người chơi thường được LÀM NỔI (khung lớn hơn, viền sáng,
+   gắn tên người chơi, hoặc ở ô vị trí "của bạn"). Chọn tướng đó làm "userChampion".
+2. Phe của tướng người chơi = ĐỒNG MINH; phe còn lại là ĐỊCH.
+3. Suy ra "userLane" từ biểu tượng vị trí/vai trò hiển thị cạnh tướng người chơi.
+4. KHÔNG chắc tướng nào là người chơi -> userChampion.confidence "low" + nêu ở notes.`;
+
   const prompt = `Bạn là chuyên gia đọc ảnh chụp màn hình Liên Minh: Tốc Chiến (Wild Rift).
-Người chơi dùng tướng: "${champ}", ${lane}.
 
 NHIỆM VỤ:
 1. Tìm tất cả tướng trong ảnh và phe của chúng.
-2. Tìm tướng "${champ}" để xác định phe người chơi (đồng minh). Phe còn lại là ĐỊCH.
+${userTask}
 
 QUY TẮC:
 - Nhận diện theo NHÂN VẬT, bỏ qua skin/trang phục.
 - "name" là tên GỐC tiếng Anh; "displayName" là tên hiển thị trên ảnh.
 - CHỈ liệt kê tướng nhìn rõ. KHÔNG bịa. Không chắc -> confidence "low" + ghi notes.
-- Không thấy tướng người chơi -> userTeam "unknown", đưa tất cả vào enemyChampions.
+- Không thấy tướng người chơi -> userTeam "unknown", userChampion.name "", đưa tất cả vào enemyChampions.
+- "userLane" PHẢI là một trong: "top" | "jungle" | "mid" | "bot" | "support" | "unknown".
 
 CHỈ trả JSON thuần (không markdown, không \`\`\`):
-{"userTeam":"blue|red|unknown","enemyChampions":[{"name":"","displayName":"","confidence":"high|medium|low"}],"allyChampions":[{"name":"","displayName":"","confidence":"high|medium|low"}],"overallConfidence":"high|medium|low","notes":""}`;
+{"userTeam":"blue|red|unknown","userChampion":{"name":"","displayName":"","confidence":"high|medium|low"},"userLane":"top|jungle|mid|bot|support|unknown","enemyChampions":[{"name":"","displayName":"","confidence":"high|medium|low"}],"allyChampions":[{"name":"","displayName":"","confidence":"high|medium|low"}],"overallConfidence":"high|medium|low","notes":""}`;
 
   return {
     model: EXTRACT_MODEL,

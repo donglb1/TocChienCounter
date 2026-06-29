@@ -7,7 +7,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as MediaLibrary from "expo-media-library";
-import { C, LANES } from "../theme";
+import { C, LANES, laneFromKey } from "../theme";
 import { findChampion } from "../data/champions";
 import { championIcon } from "../lib/images";
 import { extractChampions } from "../lib/api";
@@ -24,8 +24,10 @@ export default function SetupScreen({ session, patch, onExtracted, onHistory }) 
   const [imageUri, setImageUri] = useState(session.imageUri || null);
   const [imageBase64, setImageBase64] = useState(null);
   const [mediaType, setMediaType] = useState("image/jpeg");
-  const [loading, setLoading] = useState(false);
+  const [reading, setReading] = useState(false);
   const [grabbing, setGrabbing] = useState(false);
+  const [enemies, setEnemies] = useState(session.enemies || []);
+  const [detected, setDetected] = useState(null); // kết quả đọc ảnh: { conf, notes, champ, lane }
 
   // Resize cạnh dài về MAX_EDGE rồi nạp vào state (dùng chung cho cả 2 nút)
   const loadImage = async ({ uri, width, height }) => {
@@ -41,6 +43,7 @@ export default function SetupScreen({ session, patch, onExtracted, onHistory }) 
     setImageUri(manip.uri);
     setImageBase64(manip.base64);
     setMediaType("image/jpeg");
+    setDetected(null); // ảnh mới → cần đọc lại
   };
 
   const pickImage = async () => {
@@ -98,37 +101,63 @@ export default function SetupScreen({ session, patch, onExtracted, onHistory }) 
     }
   };
 
-  const run = async () => {
-    const champ = findChampion(champQuery);
-    if (!champ) {
-      Alert.alert("Chưa chọn tướng", "Gõ và chọn tướng người chơi từ gợi ý.");
-      return;
-    }
+  // Bước 1: AI đọc ảnh → tự điền TƯỚNG NGƯỜI CHƠI + ĐƯỜNG + team địch.
+  // Nếu người chơi đã gõ sẵn tên tướng → gửi làm gợi ý để tách phe chuẩn hơn.
+  const readImage = async () => {
     if (!imageBase64) {
-      Alert.alert("Chưa có ảnh", "Chọn ảnh chụp màn hình team địch.");
+      Alert.alert("Chưa có ảnh", "Chụp/Chọn ảnh màn chọn tướng (hoặc loading) để AI đọc.");
       return;
     }
-    setLoading(true);
+    setReading(true);
     try {
-      patch({ champ: champ.vi, lane, imageUri });
+      const hint = findChampion(champQuery);
       const result = await extractChampions({
-        imageBase64, mediaType, champ: champ.name, lane,
+        imageBase64,
+        mediaType,
+        champ: hint ? hint.name : undefined,
+        lane: hint ? lane : undefined,
       });
-      const enemies = (result.enemyChampions || []).map((e) => ({
+
+      const foundEnemies = (result.enemyChampions || []).map((e) => ({
         name: e.name,
         displayName: e.displayName || e.name,
         confidence: e.confidence || "medium",
       }));
-      if (enemies.length === 0) {
-        Alert.alert("Không đọc được tướng", result.notes || "Thử ảnh rõ hơn hoặc nhập tay ở bước sau.");
+      setEnemies(foundEnemies);
+
+      // Tự điền tướng người chơi (nếu chưa gõ tay) + đường đọc được
+      const uc = result.userChampion || {};
+      const ucChamp = uc.name ? findChampion(uc.name) : null;
+      if (ucChamp && !hint) setChampQuery(ucChamp.vi);
+      const detLane = laneFromKey(result.userLane);
+      if (detLane) setLane(detLane);
+
+      setDetected({
+        champ: (hint || ucChamp)?.vi || null,
+        champConf: uc.confidence || (hint ? "high" : "low"),
+        lane: detLane,
+        enemyCount: foundEnemies.length,
+        notes: result.notes || "",
+      });
+      if (foundEnemies.length === 0) {
+        Alert.alert("Chưa đọc được tướng địch", result.notes || "Thử ảnh rõ hơn, hoặc thêm tay ở bước sau.");
       }
-      patch({ enemies });
-      onExtracted();
     } catch (e) {
       Alert.alert("Lỗi", String(e.message || e));
     } finally {
-      setLoading(false);
+      setReading(false);
     }
+  };
+
+  // Bước 2: chốt → sang màn xác nhận. Bắt buộc đã xác định được tướng người chơi.
+  const proceed = () => {
+    const champ = findChampion(champQuery);
+    if (!champ) {
+      Alert.alert("Chưa rõ tướng của bạn", "AI chưa nhận ra tướng bạn đang chơi — gõ tên tướng giúp nhé.");
+      return;
+    }
+    patch({ champ: champ.vi, lane, imageUri, enemies });
+    onExtracted();
   };
 
   const champObj = findChampion(champQuery);
@@ -142,20 +171,7 @@ export default function SetupScreen({ session, patch, onExtracted, onHistory }) 
         </TouchableOpacity>
       )}
 
-      <Text style={styles.label}>TƯỚNG CỦA BẠN</Text>
-      <ChampSearch
-        value={champQuery}
-        onChangeText={setChampQuery}
-        onPick={(c) => setChampQuery(c.vi)}
-        clearOnPick={false}
-        placeholder="Gõ tên tướng…"
-        leftAvatar={champObj ? <Image source={{ uri: championIcon(champObj) }} style={styles.champAvatar} /> : null}
-      />
-
-      <Text style={[styles.label, { marginTop: 18 }]}>ĐƯỜNG</Text>
-      <LanePicker value={lane} onChange={setLane} />
-
-      <Text style={[styles.label, { marginTop: 18 }]}>ẢNH TEAM ĐỊCH</Text>
+      <Text style={styles.label}>ẢNH TRẬN ĐẤU (MÀN CHỌN TƯỚNG / LOADING)</Text>
       <TouchableOpacity
         style={styles.quickBtn}
         onPress={grabLatest}
@@ -168,7 +184,7 @@ export default function SetupScreen({ session, patch, onExtracted, onHistory }) 
         </Text>
       </TouchableOpacity>
       <Text style={styles.quickHint}>
-        Chụp màn hình chọn tướng trong game → mở app → bấm nút này.
+        Chụp màn chọn tướng trong game → mở app → bấm nút này. AI tự đọc tướng bạn đang chơi, đường & team địch.
       </Text>
       <TouchableOpacity
         style={[styles.imageBox, !imageUri && styles.imageBoxEmpty]}
@@ -182,18 +198,58 @@ export default function SetupScreen({ session, patch, onExtracted, onHistory }) 
             <CornerBrackets color="rgba(34,211,238,0.6)" size={16} inset={10} />
             <Ionicons name="image-outline" size={38} color={C.violet} />
             <Text style={styles.imageHintTitle}>Tải ảnh chọn tướng</Text>
-            <Text style={styles.imageHint}>Chụp màn hình team địch để AI đọc</Text>
+            <Text style={styles.imageHint}>Chọn từ thư viện để AI đọc</Text>
           </>
         )}
       </TouchableOpacity>
 
-      <GradientButton
-        title="ĐỌC TEAM ĐỊCH →"
-        loading={loading}
-        loadingText="Đang đọc tướng…"
-        onPress={run}
-        style={{ marginTop: 22 }}
+      {imageBase64 && !detected && (
+        <GradientButton
+          title="ĐỌC ẢNH → TỰ NHẬN TƯỚNG"
+          loading={reading}
+          loadingText="AI đang đọc ảnh…"
+          onPress={readImage}
+          style={{ marginTop: 18 }}
+        />
+      )}
+      {detected && (
+        <View style={styles.detectedBox}>
+          <View style={styles.detectedRow}>
+            <Ionicons name="sparkles" size={15} color={C.green} />
+            <Text style={styles.detectedTitle}>AI đã đọc ảnh — kiểm tra & sửa nếu sai</Text>
+          </View>
+          <Text style={styles.detectedLine}>
+            Tướng: <Text style={styles.detectedVal}>{detected.champ || "chưa rõ — gõ tay"}</Text>
+            {"   "}Đường: <Text style={styles.detectedVal}>{detected.lane || lane}</Text>
+            {"   "}Địch: <Text style={styles.detectedVal}>{detected.enemyCount}</Text>
+          </Text>
+          {detected.champConf === "low" && (
+            <Text style={styles.detectedWarn}>⚠ Không chắc tướng của bạn — kiểm tra lại ô bên dưới.</Text>
+          )}
+        </View>
+      )}
+
+      {/* Tướng + đường: AI tự điền sau khi đọc ảnh, vẫn sửa tay được */}
+      <Text style={[styles.label, { marginTop: 18 }]}>TƯỚNG CỦA BẠN</Text>
+      <ChampSearch
+        value={champQuery}
+        onChangeText={setChampQuery}
+        onPick={(c) => setChampQuery(c.vi)}
+        clearOnPick={false}
+        placeholder="AI tự điền sau khi đọc ảnh — hoặc gõ tay…"
+        leftAvatar={champObj ? <Image source={{ uri: championIcon(champObj) }} style={styles.champAvatar} /> : null}
       />
+
+      <Text style={[styles.label, { marginTop: 18 }]}>ĐƯỜNG</Text>
+      <LanePicker value={lane} onChange={setLane} />
+
+      {(detected || (champObj && enemies.length > 0)) && (
+        <GradientButton
+          title="TIẾP TỤC →"
+          onPress={proceed}
+          style={{ marginTop: 22 }}
+        />
+      )}
     </ScrollView>
   );
 }
@@ -211,6 +267,15 @@ const styles = StyleSheet.create({
   },
   quickBtnText: { color: C.cyan, fontWeight: "800", fontSize: 14, letterSpacing: 0.5 },
   quickHint: { color: C.textFaint, fontSize: 12, lineHeight: 16, marginBottom: 10 },
+  detectedBox: {
+    marginTop: 16, padding: 12, borderRadius: 12, borderWidth: 1,
+    borderColor: "rgba(34,197,94,0.4)", backgroundColor: "rgba(34,197,94,0.07)", gap: 6,
+  },
+  detectedRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  detectedTitle: { color: C.green, fontWeight: "800", fontSize: 13 },
+  detectedLine: { color: C.textDim, fontSize: 13, lineHeight: 19 },
+  detectedVal: { color: C.text, fontWeight: "800" },
+  detectedWarn: { color: C.warn, fontSize: 12, fontWeight: "700" },
   imageBox: {
     height: 200, borderRadius: 14, borderWidth: 1, borderColor: C.border,
     backgroundColor: C.card, alignItems: "center", justifyContent: "center", overflow: "hidden", gap: 8,
