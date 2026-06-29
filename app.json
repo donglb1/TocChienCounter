@@ -39,6 +39,14 @@
     "plugins": [
       "expo-image-picker",
       [
+        "expo-media-library",
+        {
+          "photosPermission": "Ứng dụng cần đọc ảnh để lấy nhanh screenshot team địch bạn vừa chụp.",
+          "savePhotosPermission": "Cho phép lưu ảnh.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      [
         "expo-notifications",
         {
           "color": "#a855f7"

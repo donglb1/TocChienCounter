@@ -6,6 +6,7 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
+import * as MediaLibrary from "expo-media-library";
 import { C, LANES } from "../theme";
 import { findChampion } from "../data/champions";
 import { championIcon } from "../lib/images";
@@ -24,6 +25,23 @@ export default function SetupScreen({ session, patch, onExtracted, onHistory }) 
   const [imageBase64, setImageBase64] = useState(null);
   const [mediaType, setMediaType] = useState("image/jpeg");
   const [loading, setLoading] = useState(false);
+  const [grabbing, setGrabbing] = useState(false);
+
+  // Resize cạnh dài về MAX_EDGE rồi nạp vào state (dùng chung cho cả 2 nút)
+  const loadImage = async ({ uri, width, height }) => {
+    const longEdge = Math.max(width || MAX_EDGE, height || MAX_EDGE);
+    const scale = longEdge > MAX_EDGE ? MAX_EDGE / longEdge : 1;
+    const manip = await ImageManipulator.manipulateAsync(
+      uri,
+      scale < 1
+        ? [{ resize: { width: Math.round((width || MAX_EDGE) * scale) } }]
+        : [],
+      { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+    );
+    setImageUri(manip.uri);
+    setImageBase64(manip.base64);
+    setMediaType("image/jpeg");
+  };
 
   const pickImage = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -36,21 +54,48 @@ export default function SetupScreen({ session, patch, onExtracted, onHistory }) 
       quality: 1,
     });
     if (res.canceled) return;
-    const asset = res.assets[0];
+    await loadImage(res.assets[0]);
+  };
 
-    // Resize cạnh dài về MAX_EDGE
-    const longEdge = Math.max(asset.width || MAX_EDGE, asset.height || MAX_EDGE);
-    const scale = longEdge > MAX_EDGE ? MAX_EDGE / longEdge : 1;
-    const manip = await ImageManipulator.manipulateAsync(
-      asset.uri,
-      scale < 1
-        ? [{ resize: { width: Math.round((asset.width || MAX_EDGE) * scale) } }]
-        : [],
-      { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true }
-    );
-    setImageUri(manip.uri);
-    setImageBase64(manip.base64);
-    setMediaType("image/jpeg");
+  // Chụp nhanh: lấy thẳng screenshot mới nhất trong máy, khỏi mở gallery
+  const grabLatest = async () => {
+    setGrabbing(true);
+    try {
+      const perm = await MediaLibrary.requestPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("Cần quyền", "Cho phép truy cập ảnh để lấy nhanh screenshot vừa chụp.");
+        return;
+      }
+      // Ưu tiên album Screenshots; không có thì lấy ảnh mới nhất toàn máy
+      let album = null;
+      try {
+        album = await MediaLibrary.getAlbumAsync("Screenshots");
+      } catch {}
+      const page = await MediaLibrary.getAssetsAsync({
+        first: 1,
+        mediaType: MediaLibrary.MediaType.photo,
+        sortBy: [MediaLibrary.SortBy.creationTime],
+        ...(album ? { album } : {}),
+      });
+      const asset = page.assets?.[0];
+      if (!asset) {
+        Alert.alert("Không tìm thấy ảnh", "Chưa có screenshot nào. Chụp màn hình chọn tướng trong game rồi bấm lại.");
+        return;
+      }
+      // iOS trả uri ph:// — cần localUri thật để manipulate/đọc base64
+      let uri = asset.uri;
+      if (uri.startsWith("ph://") || !uri.startsWith("file")) {
+        try {
+          const info = await MediaLibrary.getAssetInfoAsync(asset);
+          uri = info.localUri || uri;
+        } catch {}
+      }
+      await loadImage({ uri, width: asset.width, height: asset.height });
+    } catch (e) {
+      Alert.alert("Lỗi", String(e.message || e));
+    } finally {
+      setGrabbing(false);
+    }
   };
 
   const run = async () => {
@@ -112,6 +157,20 @@ export default function SetupScreen({ session, patch, onExtracted, onHistory }) 
 
       <Text style={[styles.label, { marginTop: 18 }]}>ẢNH TEAM ĐỊCH</Text>
       <TouchableOpacity
+        style={styles.quickBtn}
+        onPress={grabLatest}
+        activeOpacity={0.8}
+        disabled={grabbing}
+      >
+        <Ionicons name={grabbing ? "hourglass-outline" : "flash"} size={16} color={C.cyan} />
+        <Text style={styles.quickBtnText}>
+          {grabbing ? "Đang lấy ảnh…" : "Lấy ảnh vừa chụp"}
+        </Text>
+      </TouchableOpacity>
+      <Text style={styles.quickHint}>
+        Chụp màn hình chọn tướng trong game → mở app → bấm nút này.
+      </Text>
+      <TouchableOpacity
         style={[styles.imageBox, !imageUri && styles.imageBoxEmpty]}
         onPress={pickImage}
         activeOpacity={0.8}
@@ -145,6 +204,13 @@ const styles = StyleSheet.create({
   historyText: { color: C.cyan, fontWeight: "700", fontSize: 13 },
   label: { color: C.textDim, fontSize: 12, fontWeight: "800", letterSpacing: 1, marginBottom: 8 },
   champAvatar: { width: 40, height: 40, borderRadius: 8, borderWidth: 1, borderColor: C.amberDim },
+  quickBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7,
+    height: 46, borderRadius: 12, borderWidth: 1.5, borderColor: "rgba(34,211,238,0.45)",
+    backgroundColor: "rgba(34,211,238,0.08)", marginBottom: 8,
+  },
+  quickBtnText: { color: C.cyan, fontWeight: "800", fontSize: 14, letterSpacing: 0.5 },
+  quickHint: { color: C.textFaint, fontSize: 12, lineHeight: 16, marginBottom: 10 },
   imageBox: {
     height: 200, borderRadius: 14, borderWidth: 1, borderColor: C.border,
     backgroundColor: C.card, alignItems: "center", justifyContent: "center", overflow: "hidden", gap: 8,
