@@ -3,7 +3,7 @@
 // Không cần ảnh, không tốn API — dùng build-identity + template có sẵn.
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image, ScrollView, ActivityIndicator, RefreshControl,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image, ScrollView, ActivityIndicator, RefreshControl, Linking,
 } from "react-native";
 import { C, glow, noDiacritics, slugify } from "../theme";
 import { CHAMPIONS, BUILD_LABELS, findChampion, findChampionBySlug } from "../data/champions";
@@ -21,6 +21,13 @@ import { fetchTierList, aiChampionBuild, getCachedAiBuild } from "../lib/api";
 // slug site cho 1 tướng (ưu tiên slug thật từ tier list; fallback suy từ tên)
 function champToSlug(champ) {
   return slugify(champ.name);
+}
+
+// Mở YouTube tìm video theo tướng. Link http → app YouTube tự bắt (nếu cài),
+// không thì rơi về trình duyệt. Không cần API/khoá → chạy offline-friendly.
+function openYouTube(query) {
+  const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+  Linking.openURL(url).catch(() => {});
 }
 
 const RANGE = { xa: "Tầm xa", can: "Cận chiến" };
@@ -421,10 +428,61 @@ function ChampDetail({ champ, tier, slug, onBack, isFav, onToggleFav }) {
         </>
       )}
 
+      {/* COMBO & VIDEO — luôn hiện (kể cả tướng mới / chưa có build) */}
+      <Text style={styles.section}>COMBO & VIDEO</Text>
+      {coaching && coaching.combo ? (
+        <View style={styles.noteCard}>
+          <Text style={styles.noteLabel}>COMBO ĐỀ XUẤT</Text>
+          <Text style={styles.noteText}>{coaching.combo}</Text>
+        </View>
+      ) : (
+        <Text style={styles.videoHint}>
+          {champ._new
+            ? "Xem video để học combo & cách chơi tướng này."
+            : 'Bấm "AI đề xuất build tối ưu" ở trên để xem combo dạng chữ, hoặc xem video bên dưới.'}
+        </Text>
+      )}
+      <View style={styles.videoList}>
+        <VideoBtn
+          icon="flash"
+          label="Hướng dẫn combo"
+          sub={`Tốc Chiến ${champ.name} combo`}
+          onPress={() => openYouTube(`Tốc Chiến ${champ.name} combo hướng dẫn`)}
+        />
+        <VideoBtn
+          icon="flame"
+          label="Highlight hay"
+          sub={`Tốc Chiến ${champ.name} highlight / montage`}
+          onPress={() => openYouTube(`Tốc Chiến ${champ.name} highlight montage`)}
+        />
+        <VideoBtn
+          icon="school"
+          label="Guide cách chơi"
+          sub={`Tốc Chiến ${champ.name} guide cách lên đồ`}
+          onPress={() => openYouTube(`Tốc Chiến ${champ.name} guide cách chơi`)}
+        />
+      </View>
+
       <ItemDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
       <RuneDetailModal data={detailRune} onClose={() => setDetailRune(null)} />
       </ScrollView>
     </View>
+  );
+}
+
+// Nút mở 1 video YouTube cho tướng (combo / highlight / guide).
+function VideoBtn({ icon, label, sub, onPress }) {
+  return (
+    <TouchableOpacity style={styles.videoBtn} activeOpacity={0.8} onPress={onPress}>
+      <View style={styles.videoIcon}>
+        <Ionicons name={icon} size={18} color={C.cyan} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.videoLabel}>{label}</Text>
+        {sub ? <Text style={styles.videoSub}>{sub}</Text> : null}
+      </View>
+      <Ionicons name="logo-youtube" size={18} color={C.red} />
+    </TouchableOpacity>
   );
 }
 
@@ -563,4 +621,16 @@ const styles = StyleSheet.create({
   noteText: { color: C.text, fontSize: 13, lineHeight: 20 },
   coachLine: { color: C.text, fontSize: 13, lineHeight: 20, marginTop: 3 },
   coachKey: { color: C.cyan, fontWeight: "800" },
+  videoHint: { color: C.textFaint, fontSize: 12, lineHeight: 18, marginBottom: 10 },
+  videoList: { gap: 8, marginTop: 4 },
+  videoBtn: {
+    flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: C.card,
+    borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 11,
+  },
+  videoIcon: {
+    width: 34, height: 34, borderRadius: 9, backgroundColor: C.cyanDim,
+    alignItems: "center", justifyContent: "center",
+  },
+  videoLabel: { color: C.text, fontSize: 14, fontWeight: "800" },
+  videoSub: { color: C.textFaint, fontSize: 11, marginTop: 2 },
 });
