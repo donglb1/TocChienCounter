@@ -3,8 +3,9 @@
 // Không cần ảnh, không tốn API — dùng build-identity + template có sẵn.
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image, ScrollView, ActivityIndicator, RefreshControl, Linking,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image, ScrollView, ActivityIndicator, RefreshControl,
 } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 import { C, glow, noDiacritics, slugify } from "../theme";
 import { CHAMPIONS, BUILD_LABELS, findChampion, findChampionBySlug } from "../data/champions";
 import { getChampionBuild } from "../data/buildTemplates";
@@ -23,11 +24,19 @@ function champToSlug(champ) {
   return slugify(champ.name);
 }
 
-// Mở YouTube tìm video theo tướng. Link http → app YouTube tự bắt (nếu cài),
-// không thì rơi về trình duyệt. Không cần API/khoá → chạy offline-friendly.
-function openYouTube(query) {
-  const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-  Linking.openURL(url).catch(() => {});
+// Mở YouTube tìm video theo tướng NGAY TRONG APP (browser nội bộ expo-web-browser):
+// hiện cửa sổ nổi, vuốt/đóng là về thẳng màn Tướng, không nhảy ra app khác.
+// Không cần API/khoá, không cần video ID → chạy offline-friendly.
+async function openYouTube(query) {
+  const url = `https://m.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+  try {
+    await WebBrowser.openBrowserAsync(url, {
+      toolbarColor: C.bg,
+      controlsColor: C.cyan,
+      enableBarCollapsing: true,
+      showTitle: true,
+    });
+  } catch (_) {}
 }
 
 const RANGE = { xa: "Tầm xa", can: "Cận chiến" };
